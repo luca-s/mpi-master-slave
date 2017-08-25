@@ -3,6 +3,11 @@ from mpi.master_slave import Master, Slave
 import time
 
 class MyApp():
+    """
+    This is my application that has a lot of work to do
+    so it gives work to do to its slaves until all the
+    work is done
+    """
 
     def __init__(self, slaves):
         self.master = Master(slaves)
@@ -26,7 +31,7 @@ class MyApp():
             #
             for slave in self.master.get_avaliable():
                 print('Slave %d ready to do some more work' % slave)
-                data = ('Do something, my slave', 'Fix me a coffee')
+                data = ('Do this', 'are the details')
                 self.master.run(slave, data)
 
             #
@@ -45,6 +50,10 @@ class MyApp():
 
 
 class MySlave(Slave):
+    """
+    A slave process extends Slave class, overrides the 'do_work' method
+    and calls 'Slave.run'. The Master will do the rest
+    """
 
     def __init__(self):
         super(MySlave, self).__init__()
@@ -53,8 +62,9 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d: task %s arg %s)' % (name, rank, task, task_arg) )
+        print('  Slave %s rank %d executing "%s" and "%s"' % (name, rank, task, task_arg) )
         return (True, 'I completed my task')
+
 
 def main():
 
