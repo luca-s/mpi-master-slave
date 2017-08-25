@@ -161,3 +161,104 @@ Option 2: start the debugger right after each process has started
 ```
 mpiexec -n 4 xterm -e "python -m pdb example1.py ; bash"
 ```
+
+## Profiling (the master process)
+
+Eventually you'll probably like to profile your code to understand if there are bottlenecs.
+
+First include the profiling module and create one profiler onject somewhere in the code
+
+
+```python
+import cProfile
+
+pr = cProfile.Profile()
+```
+
+Then you have to start the profiler just before the part of the code you like to profile (you can also start/stop the profiler in different part of the code).
+Once you want to see the results (or partial results) stop the profiler and print statistics.
+
+```python
+pr.enable()
+
+[...code to be profiled here''']
+
+pr.disable()
+
+pr.print_stats(sort='tottime')
+pr.print_stats(sort='cumtime')
+```
+
+For example let's say we like to profile the Master process in the example above 
+
+```python
+import cProfile
+
+[...]
+
+    if rank == 0: # Master
+
+        pr = cProfile.Profile()
+        pr.enable()
+        app = MyApp(slaves=range(1, size))
+        app.run()
+        pr.disable()
+        app.terminate_slaves()
+        pr.print_stats(sort='tottime')
+        pr.print_stats(sort='cumtime')
+
+    else: # Any slave
+[...]
+```
+
+Output:
+
+```
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      100   30.030    0.300   30.030    0.300 {built-in method time.sleep}
+      240    0.008    0.000    0.008    0.000 {built-in method builtins.print}
+      221    0.003    0.000    0.004    0.000 master_slave.py:52(get_avaliable)
+        1    0.002    0.002   30.049   30.049 example2.py:24(run)
+      532    0.002    0.000    0.002    0.000 {method 'Iprobe' of 'mpi4py.MPI.Comm' objects}
+      219    0.001    0.000    0.003    0.000 master_slave.py:74(get_completed)
+      121    0.001    0.000    0.001    0.000 {method 'send' of 'mpi4py.MPI.Comm' objects}
+      242    0.001    0.000    0.001    0.000 {method 'recv' of 'mpi4py.MPI.Comm' objects}
+      121    0.001    0.000    0.003    0.000 master_slave.py:66(run)
+      119    0.000    0.000    0.001    0.000 master_slave.py:87(get_data)
+      440    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+      243    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
+      241    0.000    0.000    0.000    0.000 {method 'remove' of 'set' objects}
+      242    0.000    0.000    0.000    0.000 {method 'Get_source' of 'mpi4py.MPI.Status' objects}
+        1    0.000    0.000    0.000    0.000 master_slave.py:12(__init__)
+        1    0.000    0.000    0.000    0.000 example2.py:14(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+
+         3085 function calls in 30.049 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.002    0.002   30.049   30.049 example2.py:24(run)
+      100   30.030    0.300   30.030    0.300 {built-in method time.sleep}
+      240    0.008    0.000    0.008    0.000 {built-in method builtins.print}
+      221    0.003    0.000    0.004    0.000 master_slave.py:52(get_avaliable)
+      219    0.001    0.000    0.003    0.000 master_slave.py:74(get_completed)
+      121    0.001    0.000    0.003    0.000 master_slave.py:66(run)
+      532    0.002    0.000    0.002    0.000 {method 'Iprobe' of 'mpi4py.MPI.Comm' objects}
+      121    0.001    0.000    0.001    0.000 {method 'send' of 'mpi4py.MPI.Comm' objects}
+      242    0.001    0.000    0.001    0.000 {method 'recv' of 'mpi4py.MPI.Comm' objects}
+      119    0.000    0.000    0.001    0.000 master_slave.py:87(get_data)
+      440    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+      243    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
+      241    0.000    0.000    0.000    0.000 {method 'remove' of 'set' objects}
+      242    0.000    0.000    0.000    0.000 {method 'Get_source' of 'mpi4py.MPI.Status' objects}
+        1    0.000    0.000    0.000    0.000 example2.py:14(__init__)
+        1    0.000    0.000    0.000    0.000 master_slave.py:12(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+```
+
+From the output above we can see most of the Master time is spent in time.sleep, so the actual computation time is spent by the slaves.
