@@ -103,12 +103,15 @@ class Master(object):
     
 class Slave(object):
     """
-    A slave process create this class and invoke the run process
+    A slave process extend this class, create an instance and invoke the run process
     """
     def __init__(self):
         self.comm = MPI.COMM_WORLD
         
-    def run(self):        
+    def run(self):
+        """
+        Invoke this method when ready to put this slave to work
+        """
         status = MPI.Status()
         
         while True:
@@ -126,4 +129,7 @@ class Slave(object):
         self.comm.send(None, dest=0, tag=Tags.EXIT)
         
     def do_work(self, data):
+        """
+        Extend this class and override this method to do actual work
+        """
         return None
