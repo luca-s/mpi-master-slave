@@ -10,6 +10,7 @@ class MyApp():
     """
 
     def __init__(self, slaves):
+        # when creating the Master we tell it what slaves it can handle
         self.master = Master(slaves)
 
     def terminate_slaves(self):
@@ -30,8 +31,8 @@ class MyApp():
             # give work to do to each idle slave
             #
             for slave in self.master.get_avaliable():
-                print('Slave %d ready to do some more work' % slave)
-                data = ('Do this', 'are the details')
+                print('Slave %d is going to do some more work' % slave)
+                data = ('Do this', 'task details')
                 self.master.run(slave, data)
 
             #
@@ -41,9 +42,9 @@ class MyApp():
             for slave in self.master.get_completed():
                 done, message = self.master.get_data(slave)
                 if done:
-                    print("Slave %d finished is task and says %s" % (slave, message) )
+                    print('Slave %d finished is task and says "%s"' % (slave, message) )
                 else:
-                    print("Slave %d failed to accomplish his task" % slave)
+                    print('Slave %d failed to accomplish his task' % slave)
 
             # sleep some time
             time.sleep(sleep)
@@ -62,7 +63,7 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d executing "%s" and "%s"' % (name, rank, task, task_arg) )
+        print('  Slave %s rank %d executing "%s" with "%s"' % (name, rank, task, task_arg) )
         return (True, 'I completed my task')
 
 

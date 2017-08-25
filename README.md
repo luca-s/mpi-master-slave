@@ -2,10 +2,10 @@
 
 ## Writing you application
 
-Writing a master slave application is as simple as extenging Slave clase and implementing the 'do_work' method and creating a Master oject that controls the slaves.
+Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves.
 
 
-```
+```python
 from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 import time
@@ -18,6 +18,7 @@ class MyApp():
     """
 
     def __init__(self, slaves):
+        # when creating the Master we tell it what slaves it can handle
         self.master = Master(slaves)
 
     def terminate_slaves(self):
@@ -38,8 +39,8 @@ class MyApp():
             # give work to do to each idle slave
             #
             for slave in self.master.get_avaliable():
-                print('Slave %d ready to do some more work' % slave)
-                data = ('Do this', 'are the details')
+                print('Slave %d is going to do some more work' % slave)
+                data = ('Do this', 'task details')
                 self.master.run(slave, data)
 
             #
@@ -49,9 +50,9 @@ class MyApp():
             for slave in self.master.get_completed():
                 done, message = self.master.get_data(slave)
                 if done:
-                    print("Slave %d finished is task and says %s" % (slave, message) )
+                    print('Slave %d finished is task and says "%s"' % (slave, message) )
                 else:
-                    print("Slave %d failed to accomplish his task" % slave)
+                    print('Slave %d failed to accomplish his task' % slave)
 
             # sleep some time
             time.sleep(sleep)
@@ -70,7 +71,7 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d executing "%s" and "%s"' % (name, rank, task, task_arg) )
+        print('  Slave %s rank %d executing "%s" with "%s"' % (name, rank, task, task_arg) )
         return (True, 'I completed my task')
 
 
@@ -106,33 +107,39 @@ mpiexec -n 4 python example1.py
 
 Output:
 ```
-I am  lucasca-desktop rank 2 (total 4)
-I am  lucasca-desktop rank 1 (total 4)
 I am  lucasca-desktop rank 0 (total 4)
-Slave 2 ready to do some more work
-  Slave lucasca-desktop rank 2 executing "Do this" and "are the details"
+I am  lucasca-desktop rank 2 (total 4)
 I am  lucasca-desktop rank 3 (total 4)
-Slave 1 ready to do some more work
-Slave 2 finished is task and says I completed my task
-  Slave lucasca-desktop rank 1 executing "Do this" and "are the details"
-Slave 2 ready to do some more work
-Slave 3 ready to do some more work
-  Slave lucasca-desktop rank 2 executing "Do this" and "are the details"
-  Slave lucasca-desktop rank 3 executing "Do this" and "are the details"
-Slave 1 finished is task and says I completed my task
-Slave 3 finished is task and says I completed my task
-Slave 1 ready to do some more work
-Slave 3 ready to do some more work
-Slave 2 finished is task and says I completed my task
-  Slave lucasca-desktop rank 1 executing "Do this" and "are the details"
-  Slave lucasca-desktop rank 3 executing "Do this" and "are the details"
-Slave 2 ready to do some more work
+I am  lucasca-desktop rank 1 (total 4)
+Slave 2 is going to do some more work
+  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
+Slave 1 is going to do some more work
+Slave 3 is going to do some more work
+Slave 2 finished is task and says "I completed my task"
+  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
+  Slave lucasca-desktop rank 1 executing "Do this" with "task details"
+Slave 2 is going to do some more work
+Slave 3 finished is task and says "I completed my task"
+  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
+Slave 3 is going to do some more work
+Slave 1 finished is task and says "I completed my task"
+  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
+  Slave lucasca-desktop rank 1 executing "Do this" with "task details"
+Slave 1 is going to do some more work
+Slave 2 finished is task and says "I completed my task"
+Slave 3 finished is task and says "I completed my task"
+Slave 2 is going to do some more work
+Slave 3 is going to do some more work
+  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
+  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
+Slave 1 finished is task and says "I completed my task"
 
+[...]
 ```
 
 ## Debugging
 
-We open a xterm terminal for each mpi process so that we can debug each process independently on its terminal
+We'll open a xterm terminal for each mpi process so that we can debug each process independently:
 
 ```
 mpiexec -n 4 xterm -e "python example1.py ; bash"
@@ -141,7 +148,7 @@ mpiexec -n 4 xterm -e "python example1.py ; bash"
 *("; bash" is optional - it ensures that the xterm windows will stay open; even if finished)*
 
 
-Option 1: if you want the debugger to stop at a particular position in the code then add the following at the line where you want the debugger to stop:
+Option 1: if you want the debugger to stop at a specific position in the code then add the following at the line where you want the debugger to stop:
 
 ```
 import ipdb; ipdb.set_trace()
