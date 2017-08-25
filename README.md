@@ -164,9 +164,7 @@ mpiexec -n 4 xterm -e "python -m pdb example1.py ; bash"
 
 ## Profiling (the master process)
 
-Eventually you'll probably like to profile your code to understand if there are bottlenecs.
-
-First include the profiling module and create one profiler onject somewhere in the code
+Eventually you'll probably like to profile your code to understand if there are bottlenecks. To do that you have to first include the profiling module and create one profiler object somewhere in the code
 
 
 ```python
@@ -181,7 +179,7 @@ Once you want to see the results (or partial results) stop the profiler and prin
 ```python
 pr.enable()
 
-[...code to be profiled here''']
+[...code to be profiled here...]
 
 pr.disable()
 
@@ -200,10 +198,12 @@ import cProfile
 
         pr = cProfile.Profile()
         pr.enable()
+
         app = MyApp(slaves=range(1, size))
         app.run()
-        pr.disable()
         app.terminate_slaves()
+
+        pr.disable()
         pr.print_stats(sort='tottime')
         pr.print_stats(sort='cumtime')
 
@@ -261,4 +261,4 @@ Output:
 
 ```
 
-From the output above we can see most of the Master time is spent in time.sleep, so the actual computation time is spent by the slaves.
+From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves.
