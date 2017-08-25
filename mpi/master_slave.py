@@ -1,0 +1,129 @@
+from mpi4py import MPI
+from enum import IntEnum
+
+# Define MPI message tags
+Tags = IntEnum('Tags', 'READY START DONE EXIT')
+
+class Master(object):
+    """
+    The main process creates one or more of this class that handle groups of slave processes
+    """
+    
+    def __init__(self, slaves = None):
+        
+        if slaves is None:
+            slaves = []
+            
+        self.comm = MPI.COMM_WORLD
+        self.status = MPI.Status()        
+        self.slaves = set(slaves)
+        self.ready   = set()
+        self.running = set()
+        self.completed = {}
+        
+    def num_slaves(self):
+        return len(self.slaves)
+       
+    def add_slave(self, slave, ready):
+        self.slaves.add(slave)
+        if ready:
+            self.ready.add(slave)
+
+    def remove_slave(self, slave):
+        if slave in self.get_avaliable():
+            self.slaves.remove(slave)
+            self.ready.remove(slave)
+            return True
+        return False
+        
+    def move_slave(self, to_master, slave=None):
+        
+        if slave is None:
+            avail = self.get_avaliable()
+            if avail:
+                slave = next(iter(avail))
+            
+        if slave is not None and self.remove_slave(slave):
+            to_master.add_slave(slave, ready=True)
+            return slave
+            
+        return None
+        
+    def get_avaliable(self):
+                
+        # Check processes that are ready to start working again
+        possibly_ready = self.slaves - (self.ready | self.running)
+        for s in possibly_ready:
+                           
+            if self.comm.Iprobe(source=s, tag=Tags.READY):
+                self.comm.recv(source=s, tag=Tags.READY, status=self.status)
+                slave = self.status.Get_source()
+                self.ready.add(slave)
+
+        # don't return completed ones, caller needs to collect returned data first
+        return self.ready - (self.running | self.completed.keys())
+
+    def run(self, slave, data):
+        
+        # run the job (is ready) as remove it from ready set
+        if slave in self.get_avaliable():
+            self.comm.send(obj=data, dest=slave, tag=Tags.START)
+            self.ready.remove(slave)
+            self.running.add(slave)
+    
+    def get_completed(self):
+        
+        # check for completed job and store returned data
+        for s in set(self.running):
+            
+            if self.comm.Iprobe(source=s, tag=Tags.DONE):
+                data = self.comm.recv(source=s, tag=Tags.DONE, status=self.status)
+                slave = self.status.Get_source()
+                self.running.remove(slave)
+                self.completed[slave] = data
+        
+        return set(self.completed.keys())
+
+    def get_data(self, slave):
+        
+        # onece the caller collect the returned data the job can be run again
+        data = None
+        if slave in self.get_completed():
+            data = self.completed[slave]
+            del self.completed[slave]
+        return data            
+        
+    def terminate(self):
+        
+        for s in self.slaves:
+            self.comm.send(obj=None, dest=s, tag=Tags.EXIT)
+        for s in self.slaves:
+            self.comm.recv(source=s, tag=Tags.EXIT)
+    
+    
+class Slave(object):
+    """
+    A slave process create this class and invoke the run process
+    """
+    def __init__(self):
+        self.comm = MPI.COMM_WORLD
+        
+    def run(self):        
+        status = MPI.Status()
+        
+        while True:
+            self.comm.send(None, dest=0, tag=Tags.READY)
+            data = self.comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
+            tag = status.Get_tag()
+    
+            if tag == Tags.START:
+                # Do the work here
+                result = self.do_work(data)
+                self.comm.send(result, dest=0, tag=Tags.DONE)
+            elif tag == Tags.EXIT:
+                break
+        
+        self.comm.send(None, dest=0, tag=Tags.EXIT)
+        
+    def do_work(self, data):
+        return None
