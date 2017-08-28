@@ -4,7 +4,7 @@
 
 Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves.
 
-`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`
+`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
 ```python
 from mpi4py import MPI
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 There is a convinient class WorkQueue that covers the common scenario seen above.
 
 
-`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`
+`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
 
 ```python
 class MyApp(object):
