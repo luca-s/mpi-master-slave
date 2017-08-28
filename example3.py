@@ -122,7 +122,7 @@ class MySlave(Slave):
         elif task == Tasks.TASK3:
 
             arg1, arg2, arg3 = data
-            print('  Slave %s rank %d executing TASK2 with arg1 %d arg2 %d arg3 %s' % (name, rank, arg1, arg2, arg3) )
+            print('  Slave %s rank %d executing TASK3 with arg1 %d arg2 %d arg3 %s' % (name, rank, arg1, arg2, arg3) )
             ret = (True, arg1+arg2, arg3)
 
         return (task, ret)
