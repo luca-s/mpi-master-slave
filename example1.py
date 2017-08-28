@@ -1,5 +1,6 @@
 from mpi4py import MPI
 from mpi.master_slave import Master, Slave
+from mpi.work_queue import WorkQueue
 import time
 
 class MyApp(object):
@@ -12,6 +13,8 @@ class MyApp(object):
     def __init__(self, slaves):
         # when creating the Master we tell it what slaves it can handle
         self.master = Master(slaves)
+        # WorkQueue is a convenient class that run slaves on a tasks queue
+        self.work_queue = WorkQueue(self.master)
 
     def terminate_slaves(self):
         """
@@ -25,35 +28,28 @@ class MyApp(object):
         as long as there is work to do
         """
         
-        work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
-        
+        # let's pretend this is our work queue
+        for i in range(tasks):
+            # 'data' will be passed to the slave
+            self.work_queue.add_work(data=('Do task', i))
+       
         #
-        # while we have work to do and not all slaves completed
+        # Keeep starting slaves as long as there is work to do
         #
-        while work_queue or not self.master.done():
+        while not self.work_queue.done():
 
             #
-            # give work to do to each idle slave
+            # give more work to do to each idle slave (if any)
             #
-            for slave in self.master.get_ready_slaves():
-                
-                if not work_queue:
-                    break
-                task = work_queue.pop(0) # get next task in the queue
-
-                print('Slave %d is going to do task %d' % (slave, task) )
-                self.master.run(slave, data=('Do task', task) )
+            self.work_queue.do_work()
 
             #
-            # reclaim slaves that have finished working
-            # so that we can assign them more work
+            # reclaim returned data from completed slaves
             #
-            for slave in self.master.get_completed_slaves():
-                done, message = self.master.get_data(slave)
+            for slave_return_data in self.work_queue.get_completed_work():
+                done, message = slave_return_data
                 if done:
-                    print('Slave %d finished is task and says "%s"' % (slave, message) )
-                else:
-                    print('Slave %d failed to accomplish his task' % slave)
+                    print('Slave finished is task and says "%s"' % message)
 
             # sleep some time
             time.sleep(0.3)
