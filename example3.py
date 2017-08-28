@@ -1,7 +1,11 @@
 from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 from mpi.work_queue import WorkQueue
+from enum import IntEnum
+import random
 import time
+
+Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
 
 class MyApp(object):
     """
@@ -22,18 +26,28 @@ class MyApp(object):
         """
         self.master.terminate_slaves()
 
-    def run(self, tasks=10):
+    def run(self, tasks=100):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
+
         #
         # let's prepare our work queue. This can be built at initialization time
         # but it can also be added later as more work become available
         #
         for i in range(tasks):
-            # 'data' will be passed to the slave and can be anything
-            self.work_queue.add_work(data=('Do task', i))
+            # we create random tasks 1-3, every task has its own arguments
+            task = random.randint(1,4)
+            if task == 1:
+                args = 'something'
+                self.work_queue.add_work(data=(Tasks.TASK1, args))
+            elif task == 2:
+                args = (i, i*2)
+                self.work_queue.add_work(data=(Tasks.TASK2, args))
+            elif task == 3:
+                args = (1, 1, 'something')
+                self.work_queue.add_work(data=(Tasks.TASK3, args))
        
         #
         # Keeep starting slaves as long as there is work to do
@@ -49,9 +63,15 @@ class MyApp(object):
             # reclaim returned data from completed slaves
             #
             for slave_return_data in self.work_queue.get_completed_work():
-                done, message = slave_return_data
+                task, data = slave_return_data
+                if task == Tasks.TASK1:
+                    done, arg1 = data
+                elif task == Tasks.TASK2:
+                    done, arg1 = data
+                elif task == Tasks.TASK3:
+                    done, arg1, arg2 = data    
                 if done:
-                    print('Master: slave finished is task and says "%s"' % message)
+                    print('Master: slave finished is task returning: %s)' % str(data))
 
             # sleep some time
             time.sleep(0.3)
@@ -61,17 +81,50 @@ class MySlave(Slave):
     """
     A slave process extends Slave class, overrides the 'do_work' method
     and calls 'Slave.run'. The Master will do the rest
+
+    In this example we have different tasks but instead of creating a Slave for
+    each type of taks we create only one class that can handle any type of work.
+    This avoids having idle processes if, at certain times of the execution, there
+    is only a particular type of work to do but the Master doesn't have the right
+    slave for that task.
     """
 
     def __init__(self):
         super(MySlave, self).__init__()
 
-    def do_work(self, data):
+    def do_work(self, args):
+        
+        # the data contains the task type
+        task, data = args
+
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
-        task, task_arg = data
-        print('  Slave %s rank %d executing "%s" with "%d"' % (name, rank, task, task_arg) )
-        return (True, 'I completed my task (%d)' % task_arg)
+
+        #
+        # Every task type has its specific data input and return output
+        #
+
+        ret = None
+        if task == Tasks.TASK1:
+
+            arg1 = data
+            print('  Slave %s rank %d executing TASK1 with arg1 %s' % (name, rank, arg1) )
+            ret = (True, arg1)
+
+        elif task == Tasks.TASK2:
+
+            arg1, arg2 = data
+            print('  Slave %s rank %d executing TASK2 with arg1 %d arg2 %d' % (name, rank, arg1, arg2) )
+            ret = (True, 'All done')
+
+        elif task == Tasks.TASK3:
+
+            arg1, arg2, arg3 = data
+            print('  Slave %s rank %d executing TASK2 with arg1 %d arg2 %d arg3 %s' % (name, rank, arg1, arg2, arg3) )
+            ret = (True, arg1+arg2, arg3)
+
+        return (task, ret)
+
 
 
 def main():

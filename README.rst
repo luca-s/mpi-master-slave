@@ -172,6 +172,105 @@ To have a better understanding on how the Master work, here is the same code abo
                 time.sleep(0.3)
 
 
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ we can see how to the slaves can handle multiple type of tasks. The important thing is that instead of extending a Slave class for each type of tasks we have, we create only one class that can handle any type of work. This avoids having idle processes if, at certain times of the execution, there is only a particular type of work to do but the Master doesn't have the right slave for that task. If any slave can do any job, there is always a slave that can perform that task.
+
+.. code:: python
+
+    Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
+
+    class MySlave(Slave):
+
+        def __init__(self):
+            super(MySlave, self).__init__()
+
+        def do_work(self, args):
+    
+            # the data contains the task type
+            task, data = args
+
+            rank = MPI.COMM_WORLD.Get_rank()
+            name = MPI.Get_processor_name()
+
+            #
+            # Every task type has its specific data input and return output
+            #
+            ret = None
+            if task == Tasks.TASK1:
+
+                arg1 = data
+                [... do something...]
+                ret = (True, arg1)
+
+            elif task == Tasks.TASK2:
+
+                arg1, arg2 = data
+                [... do something...]
+                ret = (True, 'All done')
+
+            elif task == Tasks.TASK3:
+
+                arg1, arg2, arg3 = data
+                [... do something...]
+                ret = (True, arg1+arg2, arg3)
+
+            return (task, ret)
+
+
+The master doesn't have any interesting code, it simply has to pass the task
+type to the slave
+
+.. code:: python
+
+    class MyApp(object):
+
+        [...]
+
+        def run(self, tasks=100):
+
+            #
+            # let's prepare our work queue. This can be built at initialization time
+            # but it can also be added later as more work become available
+            #
+            for i in range(tasks):
+                # we create random tasks 1-3, every task has its own arguments
+                task = random.randint(1,4)
+                if task == 1:
+                    args = 'something'
+                    self.work_queue.add_work(data=(Tasks.TASK1, args))
+                elif task == 2:
+                    args = (i, i*2)
+                    self.work_queue.add_work(data=(Tasks.TASK2, args))
+                elif task == 3:
+                    args = (1, 1, 'something')
+                    self.work_queue.add_work(data=(Tasks.TASK3, args))
+           
+            #
+            # Keeep starting slaves as long as there is work to do
+            #
+            while not self.work_queue.done():
+
+                #
+                # give more work to do to each idle slave (if any)
+                #
+                self.work_queue.do_work()
+
+                #
+                # reclaim returned data from completed slaves
+                #
+                for slave_return_data in self.work_queue.get_completed_work():
+                    task, data = slave_return_data
+                    if task == Tasks.TASK1:
+                        done, arg1 = data
+                    elif task == Tasks.TASK2:
+                        done, arg1 = data
+                    elif task == Tasks.TASK3:
+                        done, arg1, arg2 = data    
+                    if done:
+                        print('Master: slave finished is task returning: %s)' % str(data))
+
+                # sleep some time
+                time.sleep(0.3)
+
 
 
 Running the application
