@@ -10,7 +10,7 @@ from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 import time
 
-class MyApp():
+class MyApp(object):
     """
     This is my application that has a lot of work to do
     so it gives work to do to its slaves until all the
@@ -27,15 +27,18 @@ class MyApp():
         """
         self.master.terminate_slaves()
 
-    def run(self, tasks=100):
+    def run(self, tasks=10):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
         
         work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
-
-        while work_queue: # while we have work to do
+        
+        #
+        # while we have work to do and not all slaves completed
+        #
+        while work_queue or not self.master.done():
 
             #
             # give work to do to each idle slave
@@ -47,8 +50,7 @@ class MyApp():
                 task = work_queue.pop(0) # get next task in the queue
 
                 print('Slave %d is going to do task %d' % (slave, task) )
-                data = ('Do task', task)
-                self.master.run(slave, data)
+                self.master.run(slave, data=('Do task', task) )
 
             #
             # reclaim slaves that have finished working
@@ -114,39 +116,45 @@ mpiexec -n 4 python example1.py
 
 Output:
 ```
-I am  lucasca-desktop rank 3 (total 4)
-I am  lucasca-desktop rank 1 (total 4)
 I am  lucasca-desktop rank 0 (total 4)
+I am  lucasca-desktop rank 3 (total 4)
+I am  lucasca-desktop rank 2 (total 4)
+I am  lucasca-desktop rank 1 (total 4)
 Slave 3 is going to do task 0
   Slave lucasca-desktop rank 3 executing "Do task" with "0"
-I am  lucasca-desktop rank 2 (total 4)
 Slave 1 is going to do task 1
 Slave 3 finished is task and says "I completed my task (0)"
   Slave lucasca-desktop rank 1 executing "Do task" with "1"
 Slave 2 is going to do task 2
 Slave 3 is going to do task 3
-  Slave lucasca-desktop rank 3 executing "Do task" with "3"
   Slave lucasca-desktop rank 2 executing "Do task" with "2"
-Slave 1 finished is task and says "I completed my task (1)"
-Slave 3 finished is task and says "I completed my task (3)"
-Slave 1 is going to do task 4
-Slave 3 is going to do task 5
+  Slave lucasca-desktop rank 3 executing "Do task" with "3"
 Slave 2 finished is task and says "I completed my task (2)"
+Slave 3 finished is task and says "I completed my task (3)"
+Slave 2 is going to do task 4
+Slave 3 is going to do task 5
+  Slave lucasca-desktop rank 2 executing "Do task" with "4"
+Slave 1 finished is task and says "I completed my task (1)"
   Slave lucasca-desktop rank 3 executing "Do task" with "5"
-  Slave lucasca-desktop rank 1 executing "Do task" with "4"
-  Slave lucasca-desktop rank 2 executing "Do task" with "6"
-Slave 2 is going to do task 6
+Slave 1 is going to do task 6
+  Slave lucasca-desktop rank 1 executing "Do task" with "6"
+Slave 2 finished is task and says "I completed my task (4)"
 Slave 3 finished is task and says "I completed my task (5)"
-Slave 3 is going to do task 7
-Slave 1 finished is task and says "I completed my task (4)"
-  Slave lucasca-desktop rank 3 executing "Do task" with "7"
-Slave 1 is going to do task 8
-Slave 2 finished is task and says "I completed my task (6)"
-Slave 3 finished is task and says "I completed my task (7)"
-  Slave lucasca-desktop rank 1 executing "Do task" with "8"
+Slave 2 is going to do task 7
+Slave 3 is going to do task 8
+Slave 1 finished is task and says "I completed my task (6)"
+  Slave lucasca-desktop rank 3 executing "Do task" with "8"
+  Slave lucasca-desktop rank 2 executing "Do task" with "7"
+Slave 1 is going to do task 9
+Slave 2 finished is task and says "I completed my task (7)"
+  Slave lucasca-desktop rank 1 executing "Do task" with "9"
+Slave 3 finished is task and says "I completed my task (8)"
+Slave 1 finished is task and says "I completed my task (9)"
+Task completed (rank 1)
+Task completed (rank 0)
+Task completed (rank 2)
+Task completed (rank 3)
 
-
-[...]
 ```
 
 ## Debugging
@@ -174,7 +182,7 @@ Option 2: start the debugger right after each process has started
 mpiexec -n 4 xterm -e "python -m pdb example1.py ; bash"
 ```
 
-## Profiling (the master process)
+## Profiling
 
 Eventually you'll probably like to profile your code to understand if there are bottlenecks. To do that you have to first include the profiling module and create one profiler object somewhere in the code
 

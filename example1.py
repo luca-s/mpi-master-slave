@@ -2,7 +2,7 @@ from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 import time
 
-class MyApp():
+class MyApp(object):
     """
     This is my application that has a lot of work to do
     so it gives work to do to its slaves until all the
@@ -19,15 +19,18 @@ class MyApp():
         """
         self.master.terminate_slaves()
 
-    def run(self, tasks=100):
+    def run(self, tasks=10):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
         
         work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
-
-        while work_queue: # while we have work to do
+        
+        #
+        # while we have work to do and not all slaves completed
+        #
+        while work_queue or not self.master.done():
 
             #
             # give work to do to each idle slave
@@ -39,8 +42,7 @@ class MyApp():
                 task = work_queue.pop(0) # get next task in the queue
 
                 print('Slave %d is going to do task %d' % (slave, task) )
-                data = ('Do task', task)
-                self.master.run(slave, data)
+                self.master.run(slave, data=('Do task', task) )
 
             #
             # reclaim slaves that have finished working

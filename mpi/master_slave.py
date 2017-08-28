@@ -6,7 +6,8 @@ Tags = IntEnum('Tags', 'READY START DONE EXIT')
 
 class Master(object):
     """
-    The main process creates one or more of this class that handle groups of slave processes
+    The main process creates one or more of this class that handle groups of
+    slave processes
     """
     
     def __init__(self, slaves = None):
@@ -93,9 +94,15 @@ class Master(object):
             data = self.completed[completed_slave]
             del self.completed[completed_slave]
         return data            
-        
+    
+    def done(self):
+        return not self.running and not self.completed
+
     def terminate_slaves(self):
-        
+        """
+        Call this to make all slaves exit their run loop
+        """
+
         for s in self.slaves:
             self.comm.send(obj=None, dest=s, tag=Tags.EXIT)
         for s in self.slaves:
@@ -104,7 +111,8 @@ class Master(object):
     
 class Slave(object):
     """
-    A slave process extend this class, create an instance and invoke the run process
+    A slave process extend this class, create an instance and invoke the run
+    process
     """
     def __init__(self):
         self.comm = MPI.COMM_WORLD
