@@ -4,7 +4,7 @@ mpi-master-slave: Easy to use mpi master slave code using mpi4py
 Writing you application
 -----------------------
 
-Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves. In this example we use WorkQueue too, that is a class that is a convenient class that run slaves on a tasks queue.
+Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue is completed.
 
 `Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
