@@ -108,7 +108,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
         main()
 
 
-To have a better understanding on how the Master work, here is the same code above without the WorkQueue class
+To have a better understanding on how the Master works, here is the same code above without the WorkQueue class
 
 
 `Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
@@ -172,11 +172,16 @@ To have a better understanding on how the Master work, here is the same code abo
                 time.sleep(0.3)
 
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ we can see how to the slaves can handle multiple type of tasks. The important thing is that instead of extending a Slave class for each type of tasks we have, we create only one class that can handle any type of work. This avoids having idle processes if, at certain times of the execution, there is only a particular type of work to do but the Master doesn't have the right slave for that task. If any slave can do any job, there is always a slave that can perform that task.
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we can see how to the slaves can handle multiple type of tasks. 
 
 .. code:: python
 
     Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
+
+
+Instead of extending a Slave class for each type of task we have, we create only one class that can handle any type of work. This avoids having idle processes if, at certain times of the execution, there is only a particular type of work to do but the Master doesn't have the right slave for that task. If any slave can do any job, there is always a slave that can perform that task.
+
+.. code:: python
 
     class MySlave(Slave):
 
@@ -216,8 +221,7 @@ In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.p
             return (task, ret)
 
 
-The master doesn't have any interesting code, it simply has to pass the task
-type to the slave
+The master simply passes the task type to the slave together with the task specific data.
 
 .. code:: python
 
@@ -258,6 +262,9 @@ type to the slave
                 # reclaim returned data from completed slaves
                 #
                 for slave_return_data in self.work_queue.get_completed_work():
+                    #
+                    # each task type has its own return type
+                    #
                     task, data = slave_return_data
                     if task == Tasks.TASK1:
                         done, arg1 = data
