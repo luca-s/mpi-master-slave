@@ -41,7 +41,7 @@ class MyApp(object):
                     break
                 task = work_queue.pop(0) # get next task in the queue
 
-                print('Slave %d is going to do task %d' % (slave, task) )
+                print('Master: slave %d is going to do task %d' % (slave, task) )
                 self.master.run(slave, data=('Do task', task) )
 
             #
@@ -51,9 +51,9 @@ class MyApp(object):
             for slave in self.master.get_completed_slaves():
                 done, message = self.master.get_data(slave)
                 if done:
-                    print('Slave %d finished is task and says "%s"' % (slave, message) )
+                    print('Master: slave %d finished is task and says "%s"' % (slave, message) )
                 else:
-                    print('Slave %d failed to accomplish his task' % slave)
+                    print('Master: slave %d failed to accomplish his task' % slave)
 
             # sleep some time
             time.sleep(0.3)

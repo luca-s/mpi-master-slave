@@ -186,44 +186,44 @@ Output:
 
 ::
 
+    I am  lucasca-desktop rank 1 (total 4)
+    I am  lucasca-desktop rank 2 (total 4)
     I am  lucasca-desktop rank 0 (total 4)
     I am  lucasca-desktop rank 3 (total 4)
-    I am  lucasca-desktop rank 2 (total 4)
-    I am  lucasca-desktop rank 1 (total 4)
-    Slave 3 is going to do task 0
-      Slave lucasca-desktop rank 3 executing "Do task" with "0"
-    Slave 1 is going to do task 1
-    Slave 3 finished is task and says "I completed my task (0)"
-      Slave lucasca-desktop rank 1 executing "Do task" with "1"
-    Slave 2 is going to do task 2
-    Slave 3 is going to do task 3
-      Slave lucasca-desktop rank 2 executing "Do task" with "2"
-      Slave lucasca-desktop rank 3 executing "Do task" with "3"
-    Slave 2 finished is task and says "I completed my task (2)"
-    Slave 3 finished is task and says "I completed my task (3)"
-    Slave 2 is going to do task 4
-    Slave 3 is going to do task 5
-      Slave lucasca-desktop rank 2 executing "Do task" with "4"
-    Slave 1 finished is task and says "I completed my task (1)"
-      Slave lucasca-desktop rank 3 executing "Do task" with "5"
-    Slave 1 is going to do task 6
-      Slave lucasca-desktop rank 1 executing "Do task" with "6"
-    Slave 2 finished is task and says "I completed my task (4)"
-    Slave 3 finished is task and says "I completed my task (5)"
-    Slave 2 is going to do task 7
-    Slave 3 is going to do task 8
-    Slave 1 finished is task and says "I completed my task (6)"
-      Slave lucasca-desktop rank 3 executing "Do task" with "8"
+    Master: slave 2 is going to do task 0
+    Master: slave 3 is going to do task 1
+      Slave lucasca-desktop rank 3 executing "Do task" with "1"
+      Slave lucasca-desktop rank 2 executing "Do task" with "0"
+    Master: slave 1 is going to do task 2
+    Master: slave 2 finished is task and says "I completed my task (0)"
+    Master: slave 3 finished is task and says "I completed my task (1)"
+      Slave lucasca-desktop rank 1 executing "Do task" with "2"
+      Slave lucasca-desktop rank 3 executing "Do task" with "4"
+    Master: slave 2 is going to do task 3
+    Master: slave 3 is going to do task 4
+      Slave lucasca-desktop rank 2 executing "Do task" with "3"
+    Master: slave 1 finished is task and says "I completed my task (2)"
+    Master: slave 3 finished is task and says "I completed my task (4)"
+    Master: slave 1 is going to do task 5
+    Master: slave 3 is going to do task 6
+      Slave lucasca-desktop rank 1 executing "Do task" with "5"
+    Master: slave 2 finished is task and says "I completed my task (3)"
+      Slave lucasca-desktop rank 3 executing "Do task" with "6"
+    Master: slave 2 is going to do task 7
+    Master: slave 1 finished is task and says "I completed my task (5)"
       Slave lucasca-desktop rank 2 executing "Do task" with "7"
-    Slave 1 is going to do task 9
-    Slave 2 finished is task and says "I completed my task (7)"
-      Slave lucasca-desktop rank 1 executing "Do task" with "9"
-    Slave 3 finished is task and says "I completed my task (8)"
-    Slave 1 finished is task and says "I completed my task (9)"
-    Task completed (rank 1)
-    Task completed (rank 0)
+    Master: slave 3 finished is task and says "I completed my task (6)"
+    Master: slave 1 is going to do task 8
+    Master: slave 3 is going to do task 9
+    Master: slave 2 finished is task and says "I completed my task (7)"
+      Slave lucasca-desktop rank 1 executing "Do task" with "8"
+      Slave lucasca-desktop rank 3 executing "Do task" with "9"
+    Master: slave 3 finished is task and says "I completed my task (9)"
+    Master: slave 1 finished is task and says "I completed my task (8)"
     Task completed (rank 2)
+    Task completed (rank 0)
     Task completed (rank 3)
+    Task completed (rank 1)
 
 
 

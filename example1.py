@@ -49,7 +49,7 @@ class MyApp(object):
             for slave_return_data in self.work_queue.get_completed_work():
                 done, message = slave_return_data
                 if done:
-                    print('Slave finished is task and says "%s"' % message)
+                    print('Master: slave finished is task and says "%s"' % message)
 
             # sleep some time
             time.sleep(0.3)
