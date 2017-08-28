@@ -48,8 +48,8 @@ class Master(object):
             return slave
             
         return None
-        
-    def get_avaliable(self):
+
+    def get_ready_slaves(self):
                 
         # Check processes that are ready to start working again
         possibly_ready = self.slaves - (self.ready | self.running)
@@ -63,15 +63,16 @@ class Master(object):
         # don't return completed ones, caller needs to collect returned data first
         return self.ready - (self.running | self.completed.keys())
 
+
     def run(self, slave, data):
         
         # run the job (is ready) as remove it from ready set
-        if slave in self.get_avaliable():
+        if slave in self.get_ready_slaves():
             self.comm.send(obj=data, dest=slave, tag=Tags.START)
             self.ready.remove(slave)
             self.running.add(slave)
-    
-    def get_completed(self):
+            
+    def get_completed_slaves(self):
         
         # check for completed job and store returned data
         for s in set(self.running):
@@ -84,16 +85,16 @@ class Master(object):
         
         return set(self.completed.keys())
 
-    def get_data(self, slave):
+    def get_data(self, completed_slave):
         
         # onece the caller collect the returned data the job can be run again
         data = None
-        if slave in self.get_completed():
-            data = self.completed[slave]
-            del self.completed[slave]
+        if completed_slave in self.get_completed_slaves():
+            data = self.completed[completed_slave]
+            del self.completed[completed_slave]
         return data            
         
-    def terminate(self):
+    def terminate_slaves(self):
         
         for s in self.slaves:
             self.comm.send(obj=None, dest=s, tag=Tags.EXIT)

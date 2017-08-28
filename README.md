@@ -25,7 +25,7 @@ class MyApp():
         """
         Call this to make all slaves exit
         """
-        self.master.terminate()
+        self.master.terminate_slaves()
 
     def run(self, times=100, sleep=0.3):
         """
@@ -38,7 +38,7 @@ class MyApp():
             #
             # give work to do to each idle slave
             #
-            for slave in self.master.get_avaliable():
+            for slave in self.master.get_ready_slaves():
                 print('Slave %d is going to do some more work' % slave)
                 data = ('Do this', 'task details')
                 self.master.run(slave, data)
@@ -47,7 +47,7 @@ class MyApp():
             # reclaim slaves that have finished working
             # so that we can assign them more work
             #
-            for slave in self.master.get_completed():
+            for slave in self.master.get_completed_slaves():
                 done, message = self.master.get_data(slave)
                 if done:
                     print('Slave %d finished is task and says "%s"' % (slave, message) )
