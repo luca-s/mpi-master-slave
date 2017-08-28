@@ -9,6 +9,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
 `Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
 .. code:: python
+
     from mpi4py import MPI
     from mpi.master_slave import Master, Slave
     import time
@@ -116,7 +117,8 @@ There is a convinient class WorkQueue that covers the common scenario seen above
 
 `Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
 
-.. code:: 
+.. code:: python
+
     class MyApp(object):
         """
         This is my application that has a lot of work to do
@@ -171,12 +173,16 @@ There is a convinient class WorkQueue that covers the common scenario seen above
 
 Running the application
 -----------------------
+
 ::
+
     mpiexec -n 4 python example1.py
 
 
 Output:
+
 ::
+
     I am  lucasca-desktop rank 0 (total 4)
     I am  lucasca-desktop rank 3 (total 4)
     I am  lucasca-desktop rank 2 (total 4)
@@ -223,7 +229,8 @@ Debugging
 
 We'll open a xterm terminal for each mpi process so that we can debug each process independently:
 
-:: 
+::
+ 
     mpiexec -n 4 xterm -e "python example1.py ; bash"
 
 
@@ -233,6 +240,7 @@ We'll open a xterm terminal for each mpi process so that we can debug each proce
 Option 1: if you want the debugger to stop at a specific position in the code then add the following at the line where you want the debugger to stop:
 
 ::
+
     import ipdb; ipdb.set_trace()
 
 
@@ -240,7 +248,9 @@ Then run the application as above.
 
 
 Option 2: start the debugger right after each process has started
+
 ::
+
     mpiexec -n 4 xterm -e "python -m pdb example1.py ; bash"
 
 
@@ -250,7 +260,8 @@ Profiling
 Eventually you'll probably like to profile your code to understand if there are bottlenecks. To do that you have to first include the profiling module and create one profiler object somewhere in the code
 
 
-.. code:: 
+.. code:: python
+
     import cProfile
 
     pr = cProfile.Profile()
@@ -259,7 +270,8 @@ Eventually you'll probably like to profile your code to understand if there are 
 Then you have to start the profiler just before the part of the code you like to profile (you can also start/stop the profiler in different part of the code).
 Once you want to see the results (or partial results) stop the profiler and print statistics.
 
-.. code:: 
+.. code:: python
+
     pr.enable()
 
     [...code to be profiled here...]
@@ -272,7 +284,8 @@ Once you want to see the results (or partial results) stop the profiler and prin
 
 For example let's say we like to profile the Master process in the example above 
 
-.. code:: 
+.. code:: python
+
     import cProfile
 
     [...]
@@ -297,6 +310,7 @@ For example let's say we like to profile the Master process in the example above
 Output:
 
 ::
+
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
