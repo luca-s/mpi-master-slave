@@ -23,24 +23,31 @@ class MyApp():
 
     def terminate_slaves(self):
         """
-        Call this to make all slaves exit
+        Call this to make all slaves exit their run loop
         """
         self.master.terminate_slaves()
 
-    def run(self, times=100, sleep=0.3):
+    def run(self, tasks=100):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
+        
+        work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
 
-        for i in range(times): # let's pretend we have stuff to do
+        while work_queue: # while we have work to do
 
             #
             # give work to do to each idle slave
             #
             for slave in self.master.get_ready_slaves():
-                print('Slave %d is going to do some more work' % slave)
-                data = ('Do this', 'task details')
+                
+                if not work_queue:
+                    break
+                task = work_queue.pop(0) # get next task in the queue
+
+                print('Slave %d is going to do task %d' % (slave, task) )
+                data = ('Do task', task)
                 self.master.run(slave, data)
 
             #
@@ -55,7 +62,7 @@ class MyApp():
                     print('Slave %d failed to accomplish his task' % slave)
 
             # sleep some time
-            time.sleep(sleep)
+            time.sleep(0.3)
 
 
 class MySlave(Slave):
@@ -71,8 +78,8 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d executing "%s" with "%s"' % (name, rank, task, task_arg) )
-        return (True, 'I completed my task')
+        print('  Slave %s rank %d executing "%s" with "%d"' % (name, rank, task, task_arg) )
+        return (True, 'I completed my task (%d)' % task_arg)
 
 
 def main():
@@ -107,32 +114,37 @@ mpiexec -n 4 python example1.py
 
 Output:
 ```
-I am  lucasca-desktop rank 0 (total 4)
-I am  lucasca-desktop rank 2 (total 4)
 I am  lucasca-desktop rank 3 (total 4)
 I am  lucasca-desktop rank 1 (total 4)
-Slave 2 is going to do some more work
-  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
-Slave 1 is going to do some more work
-Slave 3 is going to do some more work
-Slave 2 finished is task and says "I completed my task"
-  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
-  Slave lucasca-desktop rank 1 executing "Do this" with "task details"
-Slave 2 is going to do some more work
-Slave 3 finished is task and says "I completed my task"
-  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
-Slave 3 is going to do some more work
-Slave 1 finished is task and says "I completed my task"
-  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
-  Slave lucasca-desktop rank 1 executing "Do this" with "task details"
-Slave 1 is going to do some more work
-Slave 2 finished is task and says "I completed my task"
-Slave 3 finished is task and says "I completed my task"
-Slave 2 is going to do some more work
-Slave 3 is going to do some more work
-  Slave lucasca-desktop rank 3 executing "Do this" with "task details"
-  Slave lucasca-desktop rank 2 executing "Do this" with "task details"
-Slave 1 finished is task and says "I completed my task"
+I am  lucasca-desktop rank 0 (total 4)
+Slave 3 is going to do task 0
+  Slave lucasca-desktop rank 3 executing "Do task" with "0"
+I am  lucasca-desktop rank 2 (total 4)
+Slave 1 is going to do task 1
+Slave 3 finished is task and says "I completed my task (0)"
+  Slave lucasca-desktop rank 1 executing "Do task" with "1"
+Slave 2 is going to do task 2
+Slave 3 is going to do task 3
+  Slave lucasca-desktop rank 3 executing "Do task" with "3"
+  Slave lucasca-desktop rank 2 executing "Do task" with "2"
+Slave 1 finished is task and says "I completed my task (1)"
+Slave 3 finished is task and says "I completed my task (3)"
+Slave 1 is going to do task 4
+Slave 3 is going to do task 5
+Slave 2 finished is task and says "I completed my task (2)"
+  Slave lucasca-desktop rank 3 executing "Do task" with "5"
+  Slave lucasca-desktop rank 1 executing "Do task" with "4"
+  Slave lucasca-desktop rank 2 executing "Do task" with "6"
+Slave 2 is going to do task 6
+Slave 3 finished is task and says "I completed my task (5)"
+Slave 3 is going to do task 7
+Slave 1 finished is task and says "I completed my task (4)"
+  Slave lucasca-desktop rank 3 executing "Do task" with "7"
+Slave 1 is going to do task 8
+Slave 2 finished is task and says "I completed my task (6)"
+Slave 3 finished is task and says "I completed my task (7)"
+  Slave lucasca-desktop rank 1 executing "Do task" with "8"
+
 
 [...]
 ```

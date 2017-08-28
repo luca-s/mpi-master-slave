@@ -15,24 +15,31 @@ class MyApp():
 
     def terminate_slaves(self):
         """
-        Call this to make all slaves exit
+        Call this to make all slaves exit their run loop
         """
         self.master.terminate_slaves()
 
-    def run(self, times=100, sleep=0.3):
+    def run(self, tasks=100):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
+        
+        work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
 
-        for i in range(times): # let's pretend we have stuff to do
+        while work_queue: # while we have work to do
 
             #
             # give work to do to each idle slave
             #
             for slave in self.master.get_ready_slaves():
-                print('Slave %d is going to do some more work' % slave)
-                data = ('Do this', 'task details')
+                
+                if not work_queue:
+                    break
+                task = work_queue.pop(0) # get next task in the queue
+
+                print('Slave %d is going to do task %d' % (slave, task) )
+                data = ('Do task', task)
                 self.master.run(slave, data)
 
             #
@@ -47,7 +54,7 @@ class MyApp():
                     print('Slave %d failed to accomplish his task' % slave)
 
             # sleep some time
-            time.sleep(sleep)
+            time.sleep(0.3)
 
 
 class MySlave(Slave):
@@ -63,8 +70,8 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d executing "%s" with "%s"' % (name, rank, task, task_arg) )
-        return (True, 'I completed my task')
+        print('  Slave %s rank %d executing "%s" with "%d"' % (name, rank, task, task_arg) )
+        return (True, 'I completed my task (%d)' % task_arg)
 
 
 def main():
