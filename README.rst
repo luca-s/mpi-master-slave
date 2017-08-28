@@ -193,9 +193,6 @@ Instead of extending a Slave class for each type of task we have, we create only
             # the data contains the task type
             task, data = args
 
-            rank = MPI.COMM_WORLD.Get_rank()
-            name = MPI.Get_processor_name()
-
             #
             # Every task type has its specific data input and return output
             #
