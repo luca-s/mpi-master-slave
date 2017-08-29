@@ -1,6 +1,11 @@
 mpi-master-slave: Easy to use mpi master slave code using mpi4py
 ================================================================
 
+Why mpi4py?
+-----------
+
+Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and cpossibly write in C/Fortran the functions that are computational expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
+
 Writing you application
 -----------------------
 
