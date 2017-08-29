@@ -1,4 +1,3 @@
-from .master_slave import Master
 
 class WorkQueue(object):
     """

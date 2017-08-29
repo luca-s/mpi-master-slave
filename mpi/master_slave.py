@@ -31,7 +31,7 @@ class Master(object):
             self.ready.add(slave)
 
     def remove_slave(self, slave):
-        if slave in self.get_avaliable():
+        if slave in self.get_ready_slaves():
             self.slaves.remove(slave)
             self.ready.remove(slave)
             return True

@@ -1,7 +1,7 @@
-mpi-master-slave: Easy to use mpi master slave code using mpi4py
-================================================================
+mpi-master-slave: Easy to use mpi master slave library with mpi4py
+==================================================================
 
-Why mpi4py?
+Why Python?
 -----------
 
 Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and cpossibly write in C/Fortran the functions that are computational expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
@@ -541,4 +541,135 @@ Ourput
       Slave lucasca-desktop rank 4 executing TASK1 with arg1 20
       Slave lucasca-desktop rank 9 executing TASK1 with arg1 23
       Slave lucasca-desktop rank 13 executing TASK1 with arg1 26
+
+
+In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
+In this example the Slave code is the same as the previous one, while each task has its own Master instead of having a single Master the handle all the tasks.
+
+.. code:: python
+
+    class MyMaster(Master):
+        """
+        This Master class handles a specific task
+        """
+
+        def __init__(self, task, slaves = None):
+            super(MyMaster, self).__init__(slaves)
+            self.task = task
+
+        def run(self, slave, data):
+            args = (self.task, data)
+            super(MyMaster, self).run(slave, args)
+
+        def get_data(self, completed_slave):
+            task, data = super(MyMaster, self).get_data(completed_slave)
+            return data
+
+
+At this point one could create each Master with a specific number of slaves and a WorkQueue for each Master. Unfortunately this would produce bad performance as one or more Masters might not have tasks to do at certain times and their slaves would be idles while other Masters might have plenty of work to do.
+What we want to achieve is to let Masters lend/borrow slaves with each others when they are idle so that they make the most out of their slaves. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limits on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
+
+.. code:: python
+
+    class MyApp(object):
+        """
+        This is my application that has a lot of work to do so it gives work to do
+        to its slaves until all the work is done. There different type of work so
+        the slaves must be able to do different tasks.
+        Also want to limit the number of slaves reserved to one or more tasks. We
+        make use of the MultiWorkQueue class that handles multiple Masters and where
+        each Master can have an optional limits on the number of slaves.
+        MultiWorkQueue moves slaves between Masters when some of them are idles and
+        gives slaves back when the Masters have work again.
+        """
+
+        def __init__(self, slaves,  task1_num_slave=None, task2_num_slave=None, task3_num_slave=None):
+            #
+            # create a Master for each task
+            #
+            self.master1 = MyMaster(task=Tasks.TASK1)
+            self.master2 = MyMaster(task=Tasks.TASK2)
+            self.master3 = MyMaster(task=Tasks.TASK3)
+
+            #
+            # MultiWorkQueue is a convenient class that run multiple work queues
+            # Each task needs a Tuple  with (someID, Master, None or max slaves)
+            #
+            masters_details = [(Tasks.TASK1, self.master1, task1_num_slave),
+                               (Tasks.TASK2, self.master2, task2_num_slave),
+                               (Tasks.TASK3, self.master3, task3_num_slave) ]
+            self.work_queue = MultiWorkQueue(slaves, masters_details)
+
+
+        def terminate_slaves(self):
+            """
+            Call this to make all slaves exit their run loop
+            """
+            self.master1.terminate_slaves()
+            self.master2.terminate_slaves()
+            self.master3.terminate_slaves()
+
+        def __add_next_task(self, i):
+            """
+            Create random tasks 1-3 and add it to the right work queue
+            """
+            task = random.randint(1,3)
+            if task == 1:
+                args = i
+                self.work_queue.add_work(Tasks.TASK1, args)
+            elif task == 2:
+                args = (i, i*2)
+                self.work_queue.add_work(Tasks.TASK2, args)
+            elif task == 3:
+                args = (i, 999, 'something')
+                self.work_queue.add_work(Tasks.TASK3, args)
+
+        def run(self, tasks=100):
+            """
+            This is the core of my application, keep starting slaves
+            as long as there is work to do
+            """
+
+            #
+            # let's prepare our work queue. This can be built at initialization time
+            # but it can also be added later as more work become available
+            #
+            for i in range(tasks):
+                self.__add_next_task(i)
+           
+            #
+            # Keeep starting slaves as long as there is work to do
+            #
+            while not self.work_queue.done():
+
+                #
+                # give more work to do to each idle slave (if any)
+                #
+                self.work_queue.do_work()
+
+                #
+                # reclaim returned data from completed slaves
+                #
+                for data in self.work_queue.get_completed_work(Tasks.TASK1):
+                    done, arg1 = data
+                    if done:
+                        print('Master: slave finished his task returning: %s)' % str(data))
+
+                for data in self.work_queue.get_completed_work(Tasks.TASK2):
+                    done, arg1, arg2, arg3 = data
+                    if done:
+                        print('Master: slave finished his task returning: %s)' % str(data))
+
+                for data in self.work_queue.get_completed_work(Tasks.TASK3):
+                    done, arg1, arg2 = data
+                    if done:
+                        print('Master: slave finished his task returning: %s)' % str(data))
+
+                # sleep some time
+                time.sleep(0.3)
+
+
+
+
+
 
