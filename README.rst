@@ -115,7 +115,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
 
 `Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
 
-To have a better understanding on how the Master works, here is the same code above without the WorkQueue class
+To have a better understanding on how the Master works, here is the **same code above without the WorkQueue class**
 
 
 .. code:: python
@@ -175,6 +175,9 @@ To have a better understanding on how the Master works, here is the same code ab
 
                 # sleep some time
                 time.sleep(0.3)
+
+
+More advanced exaples are provided later, they try to provide a solution to common master slave scenario issues
 
 
 
@@ -370,7 +373,7 @@ From the output above we can see most of the Master time is spent in time.sleep 
 More examples covering common scenarios
 ---------------------------------------
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we can see how to the slaves can handle multiple type of tasks. 
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
 
 .. code:: python
 
