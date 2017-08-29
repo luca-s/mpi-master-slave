@@ -546,7 +546,7 @@ Ourput
 
 
 In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
-In this example the Slave code is the same as the previous one but now each task has its own Master instead of having a single Master the handle all the tasks.
+In this example the Slave code is the same as the previous one but now each task has its own Master instead of letting a single Master handling all the tasks.
 
 .. code:: python
 
@@ -568,7 +568,8 @@ In this example the Slave code is the same as the previous one but now each task
             return data
 
 
-At this point one could create each Master with a specific number of slaves and a WorkQueue for each Master. Unfortunately this would produce bad performance as one or more Masters might not have tasks to do at certain times and their slaves would be idles while other Masters might have plenty of work to do.
+At this point one could create each Master with a specific number of slaves and a WorkQueue for each Master. Unfortunately this would produce bad performance as one or more Masters might not have tasks to do at certain times of the execution and their slaves would be idle while other Masters might have plenty of work to do.
+
 What we want to achieve is to let Masters lend/borrow slaves with each others when they are idle so that they make the most out of their slaves. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limits on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
 
 .. code:: python
