@@ -40,7 +40,7 @@ class Master(object):
     def move_slave(self, to_master, slave=None):
         
         if slave is None:
-            avail = self.get_avaliable()
+            avail = self.get_ready_slaves()
             if avail:
                 slave = next(iter(avail))
             
