@@ -17,6 +17,8 @@ class MultiWorkQueue(object):
         slaves = list(slaves)
         while slaves:
             for id, work_queue in self.work_queue.items():
+                if not slaves:
+                    break
                 num_slaves = self.num_slaves[id]
                 master     = work_queue.master
                 if num_slaves is None or master.num_slaves() < num_slaves:
