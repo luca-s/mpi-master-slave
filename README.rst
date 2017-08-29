@@ -570,23 +570,17 @@ In this example the Slave code is the same as the previous one but now each task
 
 At this point one could create each Master with a specific number of slaves and a WorkQueue for each Master. Unfortunately this would produce bad performance as one or more Masters might not have tasks to do at certain times of the execution and their slaves would be idle while other Masters might have plenty of work to do.
 
-What we want to achieve is to let Masters lend/borrow slaves with each others when they are idle so that they make the most out of their slaves. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limits on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
+What we want to achieve is to let Masters lend/borrow slaves with each others when they are idle so that they make the most out of their slaves. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limit on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
 
 .. code:: python
 
     class MyApp(object):
-        """
-        This is my application that has a lot of work to do so it gives work to do
-        to its slaves until all the work is done. There different type of work so
-        the slaves must be able to do different tasks.
-        Also want to limit the number of slaves reserved to one or more tasks. We
-        make use of the MultiWorkQueue class that handles multiple Masters and where
-        each Master can have an optional limits on the number of slaves.
-        MultiWorkQueue moves slaves between Masters when some of them are idles and
-        gives slaves back when the Masters have work again.
-        """
 
         def __init__(self, slaves,  task1_num_slave=None, task2_num_slave=None, task3_num_slave=None):
+            """
+            Each task/master can be limited on the number of slaves by the init
+            arguments. Leave them None if you don't want to limit a specific Master
+            """
             #
             # create a Master for each task
             #

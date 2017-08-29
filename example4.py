@@ -39,6 +39,10 @@ class MyApp(object):
     """
 
     def __init__(self, slaves,  task1_num_slave=None, task2_num_slave=None, task3_num_slave=None):
+        """
+        Each task/master can be limited on the number of slaves by the init
+        arguments. Leave them None if you don't want to limit a specific Master
+        """
         #
         # create a Master for each task
         #
