@@ -9,9 +9,10 @@ Python is such a nice and features rich language that writing the high level log
 Writing you application
 -----------------------
 
+`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
+
 Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue is completed.
 
-`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
 .. code:: python
 
@@ -113,10 +114,10 @@ Writing a master slave application is as simple as extenging Slave class and imp
         main()
 
 
+`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
+
 To have a better understanding on how the Master works, here is the same code above without the WorkQueue class
 
-
-`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
 
 .. code:: python
 
