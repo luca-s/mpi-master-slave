@@ -9,6 +9,8 @@ Python is such a nice and features rich language that writing the high level log
 Writing you application
 -----------------------
 
+Here and at the end of this little tutorial, we'll cover meaningful example code that is actually ready to be used in your projects. Especially the last examples are advanced code templates ready to be used so that you can focus on your specific problem and don't spend too much time in handling Master/Slave MPI issues.
+
 `Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
 Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue is completed.
@@ -544,7 +546,7 @@ Ourput
 
 
 In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
-In this example the Slave code is the same as the previous one, while each task has its own Master instead of having a single Master the handle all the tasks.
+In this example the Slave code is the same as the previous one but now each task has its own Master instead of having a single Master the handle all the tasks.
 
 .. code:: python
 
