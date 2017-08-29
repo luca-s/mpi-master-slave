@@ -9,9 +9,9 @@ Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
 
 class MyApp(object):
     """
-    This is my application that has a lot of work to do
-    so it gives work to do to its slaves until all the
-    work is done
+    This is my application that has a lot of work to do so it gives work to do
+    to its slaves until all the work is done. There different type of work so
+    the slaves must be able to do different tasks
     """
 
     def __init__(self, slaves):

@@ -23,9 +23,8 @@ Writing a master slave application is as simple as extenging Slave class and imp
 
     class MyApp(object):
         """
-        This is my application that has a lot of work to do
-        so it gives work to do to its slaves until all the
-        work is done
+        This is my application that has a lot of work to do so it gives work to do
+        to its slaves until all the work is done.
         """
 
         def __init__(self, slaves):
@@ -480,4 +479,63 @@ The master simply passes the task type to the slave together with the task speci
                 args = (i, 999, 'something')
                 data = (Tasks.TASK3, args)
             return data
+
+Ourput
+
+::
+
+    $ mpiexec -n 16 python3 example3.py
+
+    I am  lucasca-desktop rank 9 (total 16)
+    I am  lucasca-desktop rank 12 (total 16)
+    I am  lucasca-desktop rank 10 (total 16)
+    I am  lucasca-desktop rank 2 (total 16)
+    I am  lucasca-desktop rank 8 (total 16)
+    I am  lucasca-desktop rank 14 (total 16)
+    I am  lucasca-desktop rank 6 (total 16)
+    I am  lucasca-desktop rank 5 (total 16)
+    I am  lucasca-desktop rank 11 (total 16)
+    I am  lucasca-desktop rank 1 (total 16)
+    I am  lucasca-desktop rank 7 (total 16)
+    I am  lucasca-desktop rank 0 (total 16)
+    I am  lucasca-desktop rank 13 (total 16)
+      Slave lucasca-desktop rank 5 executing TASK1 with arg1 0
+      Slave lucasca-desktop rank 7 executing TASK1 with arg1 1
+      Slave lucasca-desktop rank 8 executing TASK1 with arg1 2
+      Slave lucasca-desktop rank 10 executing TASK2 with arg1 4 arg2 8
+      Slave lucasca-desktop rank 12 executing TASK2 with arg1 6 arg2 12
+      Slave lucasca-desktop rank 14 executing TASK1 with arg1 8
+    Master: slave finished is task returning: (True, 2))
+    Master: slave finished is task returning: (True, 4, 'something', 'else'))
+    Master: slave finished is task returning: (True, 0))
+    Master: slave finished is task returning: (True, 1))
+    I am  lucasca-desktop rank 3 (total 16)
+      Slave lucasca-desktop rank 9 executing TASK3 with arg1 3 arg2 999 arg3 something
+    I am  lucasca-desktop rank 4 (total 16)
+    I am  lucasca-desktop rank 15 (total 16)
+      Slave lucasca-desktop rank 13 executing TASK1 with arg1 7
+      Slave lucasca-desktop rank 11 executing TASK1 with arg1 5
+      Slave lucasca-desktop rank 1 executing TASK3 with arg1 9 arg2 999 arg3 something
+      Slave lucasca-desktop rank 4 executing TASK1 with arg1 11
+      Slave lucasca-desktop rank 8 executing TASK2 with arg1 15 arg2 30
+      Slave lucasca-desktop rank 3 executing TASK1 with arg1 10
+      Slave lucasca-desktop rank 6 executing TASK1 with arg1 13
+      Slave lucasca-desktop rank 15 executing TASK2 with arg1 17 arg2 34
+    Master: slave finished is task returning: (True, 10))
+    Master: slave finished is task returning: (True, 11))
+    Master: slave finished is task returning: (True, 13))
+    Master: slave finished is task returning: (True, 15, 'something', 'else'))
+    Master: slave finished is task returning: (True, 3, 'something'))
+    Master: slave finished is task returning: (True, 5))
+    Master: slave finished is task returning: (True, 6, 'something', 'else'))
+    Master: slave finished is task returning: (True, 7))
+    Master: slave finished is task returning: (True, 8))
+      Slave lucasca-desktop rank 10 executing TASK3 with arg1 16 arg2 999 arg3 something
+      Slave lucasca-desktop rank 7 executing TASK2 with arg1 14 arg2 28
+      Slave lucasca-desktop rank 5 executing TASK1 with arg1 12
+      Slave lucasca-desktop rank 2 executing TASK3 with arg1 18 arg2 999 arg3 something
+      Slave lucasca-desktop rank 8 executing TASK2 with arg1 22 arg2 44
+      Slave lucasca-desktop rank 4 executing TASK1 with arg1 20
+      Slave lucasca-desktop rank 9 executing TASK1 with arg1 23
+      Slave lucasca-desktop rank 13 executing TASK1 with arg1 26
 
