@@ -6,7 +6,7 @@ class MyApp(object):
     """
     This is my application that has a lot of work to do so it gives work to do
     to its slaves until all the work is done
-    """"
+    """
 
     def __init__(self, slaves):
         # when creating the Master we tell it what slaves it can handle
