@@ -441,8 +441,7 @@ The master simply passes the task type to the slave together with the task speci
             # but it can also be added later as more work become available
             #
             for i in range(tasks):
-                data = self.__get_next_task(i)
-                self.work_queue.add_work(data)
+                self.__add_next_task(i)
            
             #
             # Keeep starting slaves as long as there is work to do
@@ -474,21 +473,25 @@ The master simply passes the task type to the slave together with the task speci
                 # sleep some time
                 time.sleep(0.3)
 
-        def __get_next_task(self, i):
-            #
-            # we create random tasks 1-3, every task has its own arguments
-            #
+    def __add_next_task(self, i, task=None):
+        """
+        we create random tasks 1-3 and add it to the work queue
+        Every task has specific arguments
+        """
+        if task is None:
             task = random.randint(1,3)
-            if task == 1:
-                args = i
-                data = (Tasks.TASK1, args)
-            elif task == 2:
-                args = (i, i*2)
-                data = (Tasks.TASK2, args)
-            elif task == 3:
-                args = (i, 999, 'something')
-                data = (Tasks.TASK3, args)
-            return data
+
+        if task == 1:
+            args = i
+            data = (Tasks.TASK1, args)
+        elif task == 2:
+            args = (i, i*2)
+            data = (Tasks.TASK2, args)
+        elif task == 3:
+            args = (i, 999, 'something')
+            data = (Tasks.TASK3, args)
+
+        self.work_queue.add_work(data)
 
 Ourput
 

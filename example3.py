@@ -26,11 +26,14 @@ class MyApp(object):
         """
         self.master.terminate_slaves()
 
-    def __get_next_task(self, i):
+    def __add_next_task(self, i, task=None):
         """
-        we create random tasks 1-3, every task has its own arguments
+        we create random tasks 1-3 and add it to the work queue
+        Every task has specific arguments
         """
-        task = random.randint(1,3)
+        if task is None:
+            task = random.randint(1,3)
+
         if task == 1:
             args = i
             data = (Tasks.TASK1, args)
@@ -40,7 +43,8 @@ class MyApp(object):
         elif task == 3:
             args = (i, 999, 'something')
             data = (Tasks.TASK3, args)
-        return data
+
+        self.work_queue.add_work(data)
 
     def run(self, tasks=100):
         """
@@ -53,8 +57,7 @@ class MyApp(object):
         # but it can also be added later as more work become available
         #
         for i in range(tasks):
-            data = self.__get_next_task(i)
-            self.work_queue.add_work(data)
+            self.__add_next_task(i)
        
         #
         # Keeep starting slaves as long as there is work to do
