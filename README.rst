@@ -667,7 +667,20 @@ What we want to achieve is to let Masters lend/borrow slaves with each others wh
                 time.sleep(0.3)
 
 
+For example, you can test the application like this:
+
+.. code:: python
+
+    app = MyApp(slaves=range(1, size), task1_num_slave=2, task2_num_slave=None, task3_num_slave=1)
+
+::
+
+    mpiexec -n 9 xterm -e "python example4.py ; bash"
 
 
+You can see from the output the number of slaves for task1 is 2, task3 is 1 and task2 takes all the remaining slaves:
+
+
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example4.png
 
 

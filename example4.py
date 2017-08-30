@@ -186,7 +186,7 @@ def main():
 
     if rank == 0: # Master
 
-        app = MyApp(slaves=range(1, size), task1_num_slave=size/2, task2_num_slave=None, task3_num_slave=size/4)
+        app = MyApp(slaves=range(1, size), task1_num_slave=2, task2_num_slave=None, task3_num_slave=1)
         app.run()
         app.terminate_slaves()
 
