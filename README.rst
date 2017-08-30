@@ -248,6 +248,7 @@ We'll open a xterm terminal for each mpi process so that we can debug each proce
 
 "bash" is optional - it ensures that the xterm windows will stay open; even if finished
 
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/debugging.png
 
 Option 1: if you want the debugger to stop at a specific position in the code then add the following at the line where you want the debugger to stop:
 
