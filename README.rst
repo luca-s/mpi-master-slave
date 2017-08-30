@@ -618,11 +618,13 @@ What we want to achieve is to let Masters lend/borrow slaves with each others wh
             self.master2.terminate_slaves()
             self.master3.terminate_slaves()
 
-        def __add_next_task(self, i):
+        def __add_next_task(self, i, task=None):
             """
             Create random tasks 1-3 and add it to the right work queue
             """
-            task = random.randint(1,3)
+            if task is None:
+                task = random.randint(1,3)
+
             if task == 1:
                 args = i
                 self.work_queue.add_work(Tasks.TASK1, args)
