@@ -117,7 +117,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
 
 `Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
 
-To have a better understanding on how the Master works, here is the **same code above without the WorkQueue class**
+To have a better understanding on how the Master code works, here is the **same code above without the WorkQueue class**
 
 
 .. code:: python
@@ -376,6 +376,10 @@ From the output above we can see most of the Master time is spent in time.sleep 
 More examples covering common scenarios
 ---------------------------------------
 
+
+Example 3
+---------
+
 In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
 
 .. code:: python
@@ -545,6 +549,10 @@ Ourput
       Slave lucasca-desktop rank 9 executing TASK1 with arg1 23
       Slave lucasca-desktop rank 13 executing TASK1 with arg1 26
 
+
+
+Example 4
+---------
 
 In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 In this example the Slave code is the same as the previous one but now each task has its own Master instead of letting a single Master handling all the tasks.
