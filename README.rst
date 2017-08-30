@@ -1,10 +1,15 @@
 mpi-master-slave: Easy to use mpi master slave library with mpi4py
 ==================================================================
 
-Why Python?
------------
+Why MPI with Python?
+--------------------
 
-Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and cpossibly write in C/Fortran the functions that are computational expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
+Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
+
+Also I just want to remember that MPI allows to scale you application, that means it can handle indefinite amount of work given that enough hardware (nodes) is avalible. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but don't allow you application to scale. 
+
+Also, keep in mind that MPI can be used on your local machine spawing a process for each core. The resulting performance are comparable with multithreded code, execpt that multithreding is much easier to achieve because it doesn't enforce a strinct design of your application as it happens with MPI.
+
 
 Writing you application
 -----------------------
@@ -115,71 +120,16 @@ Writing a master slave application is as simple as extenging Slave class and imp
         main()
 
 
-`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__
+More advanced exaples are explained at the end of this tutorial, here is a summary:
 
-To have a better understanding on how the Master code works, here is the **same code above without the WorkQueue class**
+`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ is the **same code above without the WorkQueue class**, this is helpful in case you need to have more control of your Master.
 
+`Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how **slaves can handle multiple type of tasks.** 
 
-.. code:: python
+`Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 
-    class MyApp(object):
-        """
-        This is my application that has a lot of work to do
-        so it gives work to do to its slaves until all the
-        work is done
-        """
+`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how subsequent tasks that make use of the same resource can be assigned to the same slave so that the resource can be acquired only once.
 
-        def __init__(self, slaves):
-            # when creating the Master we tell it what slaves it can handle
-            self.master = Master(slaves)
-
-        def terminate_slaves(self):
-            """
-            Call this to make all slaves exit their run loop
-            """
-            self.master.terminate_slaves()
-
-        def run(self, tasks=10):
-            """
-            This is the core of my application, keep starting slaves
-            as long as there is work to do
-            """
-            
-            work_queue = [i for i in range(tasks)] # let's pretend this is our work queue
-            
-            #
-            # while we have work to do and not all slaves completed
-            #
-            while work_queue or not self.master.done():
-
-                #
-                # give work to do to each idle slave
-                #
-                for slave in self.master.get_ready_slaves():
-                    
-                    if not work_queue:
-                        break
-                    task = work_queue.pop(0) # get next task in the queue
-
-                    print('Slave %d is going to do task %d' % (slave, task) )
-                    self.master.run(slave, data=('Do task', task) )
-
-                #
-                # reclaim slaves that have finished working
-                # so that we can assign them more work
-                #
-                for slave in self.master.get_completed_slaves():
-                    done, message = self.master.get_data(slave)
-                    if done:
-                        print('Slave %d finished is task and says "%s"' % (slave, message) )
-                    else:
-                        print('Slave %d failed to accomplish his task' % slave)
-
-                # sleep some time
-                time.sleep(0.3)
-
-
-More advanced exaples are provided later, they try to provide a solution to common master slave scenario issues
 
 
 
@@ -370,7 +320,7 @@ Output:
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 
-From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves.
+From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves. If the Master process become the bottleneck of your application, it doesn't matter how many nodes you use as the will be idle due to the MAster not being able to efficiently control them.
 
 
 More examples covering common scenarios
