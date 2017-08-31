@@ -313,7 +313,7 @@ Output:
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 
-From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves. If the Master process become the bottleneck of your application, it doesn't matter how many nodes you use as the will be idle due to the MAster not being able to efficiently control them.
+From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves. If the Master process become the bottleneck of your application, the slaves nodes will be idle due to the Master not being able to efficiently control them.
 
 
 More examples covering common scenarios
@@ -545,6 +545,8 @@ What we want to achieve is to let Masters lend/borrow slaves with each others wh
 
 .. code:: python
 
+    from mpi.multi_work_queue import MultiWorkQueue
+
     class MyApp(object):
 
         def __init__(self, slaves,  task1_num_slave=None, task2_num_slave=None, task3_num_slave=None):
@@ -696,12 +698,35 @@ This is the Slave code that simulate the time required to initialize the job for
             return (True, 'I completed my task (%d)' % task_arg)
 
 
-On the Master code there is little to change. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
+On the Master code there is little to change from example 1. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
 
 .. code:: python
 
     WorkQueue.add_work(data, resource=some_id)
     WorkQueue.add_work(data, resource=some_id)
+
+
+
+
+    class MyApp(object):
+
+        [...]
+
+        def run(self, tasks=100):
+
+            [...]
+
+            for i in range(tasks):
+                #
+                # the slave will be working on one out of 3 resources
+                #
+                resource_id = random.randint(1, 3)
+                data = ('Do something', i, resource_id)
+                self.work_queue.add_work(data, resource_id)
+           
+            [...]
+
+
 
 WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource, that is:
 
@@ -710,5 +735,18 @@ WorkQueue and  MultiWorkQueue will try their best to assign the same resource id
 * Finally, try to assign this slave to any resource
 
 
+We can test the code and see that each slave keep processing the same resource until all the tasks associated with that resource are completed and the slave starts processing another resource:
+
+::
+
+    mpiexec -n 4 xterm -e "python example5.py ; bash"
+
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example5.png
 
 
+::
+
+    mpiexec -n 6 xterm -e "python example5.py ; bash"
+
+
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example6.png
