@@ -36,7 +36,7 @@ class MyApp(object):
             #
             # the slave will be working on one out of 3 resources
             #
-            resource_id = random.randint(1, 5)
+            resource_id = random.randint(1, 3)
             data = ('Do something', i, resource_id)
             self.work_queue.add_work(data, resource_id)
        
