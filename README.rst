@@ -31,7 +31,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
     class MyApp(object):
         """
         This is my application that has a lot of work to do so it gives work to do
-        to its slaves until all the work is done.
+        to its slaves until all the work is done
         """
 
         def __init__(self, slaves):
@@ -51,10 +51,12 @@ Writing a master slave application is as simple as extenging Slave class and imp
             This is the core of my application, keep starting slaves
             as long as there is work to do
             """
-            
-            # let's pretend this is our work queue
+            #
+            # let's prepare our work queue. This can be built at initialization time
+            # but it can also be added later as more work become available
+            #
             for i in range(tasks):
-                # 'data' will be passed to the slave
+                # 'data' will be passed to the slave and can be anything
                 self.work_queue.add_work(data=('Do task', i))
            
             #
@@ -73,7 +75,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
                 for slave_return_data in self.work_queue.get_completed_work():
                     done, message = slave_return_data
                     if done:
-                        print('Slave finished is task and says "%s"' % message)
+                        print('Master: slave finished is task and says "%s"' % message)
 
                 # sleep some time
                 time.sleep(0.3)
@@ -92,7 +94,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
             rank = MPI.COMM_WORLD.Get_rank()
             name = MPI.Get_processor_name()
             task, task_arg = data
-            print('  Slave %s rank %d executing "%s" with "%d"' % (name, rank, task, task_arg) )
+            print('  Slave %s rank %d executing "%s" task_id "%d"' % (name, rank, task, task_arg) )
             return (True, 'I completed my task (%d)' % task_arg)
 
 
@@ -128,7 +130,7 @@ More advanced exaples are explained at the end of this tutorial, here is a summa
 
 `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 
-`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how subsequent tasks that make use of the same resource can be assigned to the same slave so that the resource can be acquired only once.
+`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to avoid random assignment of tasks to slaves and to enforce assignemnt of tasks to the slaves slaves that can make use of computation or initialization already performed on the previous task.
 
 
 
@@ -145,44 +147,35 @@ Output:
 
 ::
 
+    I am  lucasca-desktop rank 3 (total 4)
     I am  lucasca-desktop rank 1 (total 4)
     I am  lucasca-desktop rank 2 (total 4)
     I am  lucasca-desktop rank 0 (total 4)
-    I am  lucasca-desktop rank 3 (total 4)
-    Master: slave 2 is going to do task 0
-    Master: slave 3 is going to do task 1
-      Slave lucasca-desktop rank 3 executing "Do task" with "1"
-      Slave lucasca-desktop rank 2 executing "Do task" with "0"
-    Master: slave 1 is going to do task 2
-    Master: slave 2 finished is task and says "I completed my task (0)"
-    Master: slave 3 finished is task and says "I completed my task (1)"
-      Slave lucasca-desktop rank 1 executing "Do task" with "2"
-      Slave lucasca-desktop rank 3 executing "Do task" with "4"
-    Master: slave 2 is going to do task 3
-    Master: slave 3 is going to do task 4
-      Slave lucasca-desktop rank 2 executing "Do task" with "3"
-    Master: slave 1 finished is task and says "I completed my task (2)"
-    Master: slave 3 finished is task and says "I completed my task (4)"
-    Master: slave 1 is going to do task 5
-    Master: slave 3 is going to do task 6
-      Slave lucasca-desktop rank 1 executing "Do task" with "5"
-    Master: slave 2 finished is task and says "I completed my task (3)"
-      Slave lucasca-desktop rank 3 executing "Do task" with "6"
-    Master: slave 2 is going to do task 7
-    Master: slave 1 finished is task and says "I completed my task (5)"
-      Slave lucasca-desktop rank 2 executing "Do task" with "7"
-    Master: slave 3 finished is task and says "I completed my task (6)"
-    Master: slave 1 is going to do task 8
-    Master: slave 3 is going to do task 9
-    Master: slave 2 finished is task and says "I completed my task (7)"
-      Slave lucasca-desktop rank 1 executing "Do task" with "8"
-      Slave lucasca-desktop rank 3 executing "Do task" with "9"
-    Master: slave 3 finished is task and says "I completed my task (9)"
-    Master: slave 1 finished is task and says "I completed my task (8)"
+      Slave lucasca-desktop rank 2 executing "Do task" task_id "0"
+      Slave lucasca-desktop rank 3 executing "Do task" task_id "1"
+    Master: slave finished is task and says "I completed my task (0)"
+      Slave lucasca-desktop rank 1 executing "Do task" task_id "2"
+    Master: slave finished is task and says "I completed my task (1)"
+    Master: slave finished is task and says "I completed my task (2)"
+      Slave lucasca-desktop rank 2 executing "Do task" task_id "3"
+      Slave lucasca-desktop rank 3 executing "Do task" task_id "4"
+    Master: slave finished is task and says "I completed my task (3)"
+    Master: slave finished is task and says "I completed my task (4)"
+      Slave lucasca-desktop rank 1 executing "Do task" task_id "5"
+      Slave lucasca-desktop rank 2 executing "Do task" task_id "6"
+      Slave lucasca-desktop rank 3 executing "Do task" task_id "7"
+    Master: slave finished is task and says "I completed my task (5)"
+    Master: slave finished is task and says "I completed my task (7)"
+    Master: slave finished is task and says "I completed my task (6)"
+      Slave lucasca-desktop rank 1 executing "Do task" task_id "8"
+      Slave lucasca-desktop rank 3 executing "Do task" task_id "9"
+    Master: slave finished is task and says "I completed my task (9)"
+    Master: slave finished is task and says "I completed my task (8)"
     Task completed (rank 2)
-    Task completed (rank 0)
-    Task completed (rank 3)
     Task completed (rank 1)
+    Task completed (rank 3)
+    Task completed (rank 0)
+
 
 
 
@@ -447,60 +440,76 @@ Ourput
 
 ::
 
-    $ mpiexec -n 16 python3 example3.py
+    $ mpiexec -n 16 python example3.py
 
-    I am  lucasca-desktop rank 9 (total 16)
-    I am  lucasca-desktop rank 12 (total 16)
-    I am  lucasca-desktop rank 10 (total 16)
-    I am  lucasca-desktop rank 2 (total 16)
     I am  lucasca-desktop rank 8 (total 16)
-    I am  lucasca-desktop rank 14 (total 16)
-    I am  lucasca-desktop rank 6 (total 16)
-    I am  lucasca-desktop rank 5 (total 16)
-    I am  lucasca-desktop rank 11 (total 16)
-    I am  lucasca-desktop rank 1 (total 16)
-    I am  lucasca-desktop rank 7 (total 16)
+    I am  lucasca-desktop rank 15 (total 16)
+    I am  lucasca-desktop rank 9 (total 16)
     I am  lucasca-desktop rank 0 (total 16)
     I am  lucasca-desktop rank 13 (total 16)
-      Slave lucasca-desktop rank 5 executing TASK1 with arg1 0
-      Slave lucasca-desktop rank 7 executing TASK1 with arg1 1
-      Slave lucasca-desktop rank 8 executing TASK1 with arg1 2
-      Slave lucasca-desktop rank 10 executing TASK2 with arg1 4 arg2 8
-      Slave lucasca-desktop rank 12 executing TASK2 with arg1 6 arg2 12
-      Slave lucasca-desktop rank 14 executing TASK1 with arg1 8
-    Master: slave finished is task returning: (True, 2))
-    Master: slave finished is task returning: (True, 4, 'something', 'else'))
-    Master: slave finished is task returning: (True, 0))
-    Master: slave finished is task returning: (True, 1))
-    I am  lucasca-desktop rank 3 (total 16)
-      Slave lucasca-desktop rank 9 executing TASK3 with arg1 3 arg2 999 arg3 something
+    I am  lucasca-desktop rank 6 (total 16)
+      Slave lucasca-desktop rank 8 executing Tasks.TASK3 with task_id 0 arg2 999 arg3 something
+      Slave lucasca-desktop rank 9 executing Tasks.TASK3 with task_id 1 arg2 999 arg3 something
+      Slave lucasca-desktop rank 13 executing Tasks.TASK2 with task_id 2 arg2 4
+      Slave lucasca-desktop rank 15 executing Tasks.TASK2 with task_id 3 arg2 6
+    Master: slave finished is task returning: (True, 0, 'something'))
+    Master: slave finished is task returning: (True, 1, 'something'))
+    Master: slave finished is task returning: (True, 2, 'something', 'else'))
+    I am  lucasca-desktop rank 1 (total 16)
+    I am  lucasca-desktop rank 11 (total 16)
+    I am  lucasca-desktop rank 5 (total 16)
+    I am  lucasca-desktop rank 10 (total 16)
+    I am  lucasca-desktop rank 2 (total 16)
+    I am  lucasca-desktop rank 7 (total 16)
+    I am  lucasca-desktop rank 14 (total 16)
+    I am  lucasca-desktop rank 12 (total 16)
     I am  lucasca-desktop rank 4 (total 16)
-    I am  lucasca-desktop rank 15 (total 16)
-      Slave lucasca-desktop rank 13 executing TASK1 with arg1 7
-      Slave lucasca-desktop rank 11 executing TASK1 with arg1 5
-      Slave lucasca-desktop rank 1 executing TASK3 with arg1 9 arg2 999 arg3 something
-      Slave lucasca-desktop rank 4 executing TASK1 with arg1 11
-      Slave lucasca-desktop rank 8 executing TASK2 with arg1 15 arg2 30
-      Slave lucasca-desktop rank 3 executing TASK1 with arg1 10
-      Slave lucasca-desktop rank 6 executing TASK1 with arg1 13
-      Slave lucasca-desktop rank 15 executing TASK2 with arg1 17 arg2 34
-    Master: slave finished is task returning: (True, 10))
-    Master: slave finished is task returning: (True, 11))
-    Master: slave finished is task returning: (True, 13))
-    Master: slave finished is task returning: (True, 15, 'something', 'else'))
-    Master: slave finished is task returning: (True, 3, 'something'))
-    Master: slave finished is task returning: (True, 5))
+    I am  lucasca-desktop rank 3 (total 16)
+      Slave lucasca-desktop rank 3 executing Tasks.TASK2 with task_id 5 arg2 10
+      Slave lucasca-desktop rank 2 executing Tasks.TASK1 with task_id 4
+      Slave lucasca-desktop rank 6 executing Tasks.TASK3 with task_id 8 arg2 999 arg3 something
+      Slave lucasca-desktop rank 5 executing Tasks.TASK3 with task_id 7 arg2 999 arg3 something
+      Slave lucasca-desktop rank 4 executing Tasks.TASK2 with task_id 6 arg2 12
+      Slave lucasca-desktop rank 9 executing Tasks.TASK1 with task_id 11
+      Slave lucasca-desktop rank 7 executing Tasks.TASK3 with task_id 9 arg2 999 arg3 something
+      Slave lucasca-desktop rank 10 executing Tasks.TASK2 with task_id 12 arg2 24
+      Slave lucasca-desktop rank 12 executing Tasks.TASK3 with task_id 14 arg2 999 arg3 something
+      Slave lucasca-desktop rank 11 executing Tasks.TASK1 with task_id 13
+      Slave lucasca-desktop rank 13 executing Tasks.TASK2 with task_id 15 arg2 30
+      Slave lucasca-desktop rank 14 executing Tasks.TASK3 with task_id 16 arg2 999 arg3 something
+    Master: slave finished is task returning: (True, 5, 'something', 'else'))
     Master: slave finished is task returning: (True, 6, 'something', 'else'))
-    Master: slave finished is task returning: (True, 7))
-    Master: slave finished is task returning: (True, 8))
-      Slave lucasca-desktop rank 10 executing TASK3 with arg1 16 arg2 999 arg3 something
-      Slave lucasca-desktop rank 7 executing TASK2 with arg1 14 arg2 28
-      Slave lucasca-desktop rank 5 executing TASK1 with arg1 12
-      Slave lucasca-desktop rank 2 executing TASK3 with arg1 18 arg2 999 arg3 something
-      Slave lucasca-desktop rank 8 executing TASK2 with arg1 22 arg2 44
-      Slave lucasca-desktop rank 4 executing TASK1 with arg1 20
-      Slave lucasca-desktop rank 9 executing TASK1 with arg1 23
-      Slave lucasca-desktop rank 13 executing TASK1 with arg1 26
+    Master: slave finished is task returning: (True, 7, 'something'))
+    Master: slave finished is task returning: (True, 8, 'something'))
+    Master: slave finished is task returning: (True, 9, 'something'))
+    Master: slave finished is task returning: (True, 11))
+    Master: slave finished is task returning: (True, 12, 'something', 'else'))
+    Master: slave finished is task returning: (True, 13))
+    Master: slave finished is task returning: (True, 14, 'something'))
+    Master: slave finished is task returning: (True, 15, 'something', 'else'))
+    Master: slave finished is task returning: (True, 16, 'something'))
+    Master: slave finished is task returning: (True, 3, 'something', 'else'))
+      Slave lucasca-desktop rank 8 executing Tasks.TASK1 with task_id 10
+      Slave lucasca-desktop rank 1 executing Tasks.TASK2 with task_id 17 arg2 34
+      Slave lucasca-desktop rank 3 executing Tasks.TASK3 with task_id 18 arg2 999 arg3 something
+      Slave lucasca-desktop rank 4 executing Tasks.TASK1 with task_id 19
+      Slave lucasca-desktop rank 5 executing Tasks.TASK2 with task_id 20 arg2 40
+      Slave lucasca-desktop rank 10 executing Tasks.TASK1 with task_id 24
+      Slave lucasca-desktop rank 11 executing Tasks.TASK1 with task_id 25
+    Master: slave finished is task returning: (True, 10))
+    Master: slave finished is task returning: (True, 4))
+      Slave lucasca-desktop rank 7 executing Tasks.TASK3 with task_id 22 arg2 999 arg3 something
+    Master: slave finished is task returning: (True, 18, 'something'))
+    Master: slave finished is task returning: (True, 20, 'something', 'else'))
+      Slave lucasca-desktop rank 12 executing Tasks.TASK2 with task_id 26 arg2 52
+      Slave lucasca-desktop rank 14 executing Tasks.TASK1 with task_id 28
+      Slave lucasca-desktop rank 15 executing Tasks.TASK2 with task_id 29 arg2 58
+      Slave lucasca-desktop rank 13 executing Tasks.TASK2 with task_id 27 arg2 54
+      Slave lucasca-desktop rank 6 executing Tasks.TASK2 with task_id 21 arg2 42
+      Slave lucasca-desktop rank 9 executing Tasks.TASK2 with task_id 23 arg2 46
+      Slave lucasca-desktop rank 2 executing Tasks.TASK1 with task_id 31
+      Slave lucasca-desktop rank 5 executing Tasks.TASK2 with task_id 33 arg2 66
+
 
 
 
@@ -645,5 +654,61 @@ You can see from the output the number of slaves for task1 is 2, task3 is 1 and 
 
 
 .. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example4.png
+
+
+
+Example 5
+---------
+
+In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ we'll see how to assign specific tasks to specific slaves. This is useful when slaves have a long initialization time (resource acquicistion from database, network folder, or any long preparation step) and they can skip this initialization if they get assigned tasks involbing the same resources.
+
+This is a common scenario when a slave has to perform an initial resources loading (from Database, network directory, network service, etc) before starting the computation. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slace has the resources in memory already.
+
+This is the Slave code that simulate the time required to initialize the job for a specific resource.
+
+.. code:: python
+
+    class MySlave(Slave):
+
+        def __init__(self):
+            super(MySlave, self).__init__()
+            self.resource = None
+
+        def do_work(self, data):
+
+            task, resource = data
+
+            print('  Slave %s rank %d executing "%s" with resource "%s"' % 
+                 (name, MPI.COMM_WORLD.Get_rank(), task, str(resource)) )
+
+            #
+            # The slave can check if it has already acquired the resource and save
+            # time
+            #
+            if self.resource != resource:
+                #
+                # simulate the time required to acquire this resource
+                #
+                time.sleep(10)
+                self.resource = resource:
+
+            # Make use of the resource in some way and then return
+            return (True, 'I completed my task (%d)' % task_arg)
+
+
+On the Master code there is little to change. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
+
+.. code:: python
+
+    WorkQueue.add_work(data, resource=some_id)
+    WorkQueue.add_work(data, resource=some_id)
+
+WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource, that is:
+
+* Try to assign this slave to its previous resource
+* Try to assign this slave to a resource nobody else is using
+* Finally, try to assign this slave to any resource
+
+
 
 

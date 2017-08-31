@@ -9,17 +9,17 @@ class MultiWorkQueue(object):
         self.slaves = list(slaves)
         self.work_queue = {}
         self.num_slaves = {}
-        for id, master, num_slaves in masters_details:
-            self.work_queue[id] = WorkQueue(master)
-            self.num_slaves[id] = num_slaves
+        for task_id, master, num_slaves in masters_details:
+            self.work_queue[task_id] = WorkQueue(master)
+            self.num_slaves[task_id] = num_slaves
 
         # assign slaves to Masters
         slaves = list(slaves)
         while slaves:
-            for id, work_queue in self.work_queue.items():
+            for task_id, work_queue in self.work_queue.items():
                 if not slaves:
                     break
-                num_slaves = self.num_slaves[id]
+                num_slaves = self.num_slaves[task_id]
                 master     = work_queue.master
                 if num_slaves is None or master.num_slaves() < num_slaves:
                     master.add_slave(slaves.pop(0), ready=True)                    
@@ -31,8 +31,8 @@ class MultiWorkQueue(object):
                 return False
         return True
 
-    def add_work(self, id, data):
-        self.work_queue[id].add_work(data)
+    def add_work(self, task_id, data, resource_id=None):
+        self.work_queue[task_id].add_work(data, resource_id=resource_id)
 
     def do_work(self):
 
@@ -91,6 +91,6 @@ class MultiWorkQueue(object):
                 master.move_slave(to_master=other_work_queue.master)
                 break
 
-    def get_completed_work(self, id):
-        return self.work_queue[id].get_completed_work()
+    def get_completed_work(self, task_id):
+        return self.work_queue[task_id].get_completed_work()
 

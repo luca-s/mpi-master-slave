@@ -2,6 +2,7 @@ from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 from mpi.work_queue import WorkQueue
 import time
+import random
 
 class MyApp(object):
     """
@@ -21,18 +22,25 @@ class MyApp(object):
         """
         self.master.terminate_slaves()
 
-    def run(self, tasks=10):
+    def run(self, tasks=100):
         """
         This is the core of my application, keep starting slaves
         as long as there is work to do
         """
+
         #
         # let's prepare our work queue. This can be built at initialization time
         # but it can also be added later as more work become available
         #
         for i in range(tasks):
-            # 'data' will be passed to the slave and can be anything
-            self.work_queue.add_work(data=('Do task', i))
+            #
+            # the slave will be working on one out of 3 resources
+            #
+            resource_id = random.randint(1, 5)
+            #if resource_id > 3:
+            #    resource_id = None
+            data = ('Do something', i, resource_id)
+            self.work_queue.add_work(data, resource_id)
        
         #
         # Keeep starting slaves as long as there is work to do
@@ -64,13 +72,28 @@ class MySlave(Slave):
 
     def __init__(self):
         super(MySlave, self).__init__()
+        self.resource = None
 
     def do_work(self, data):
-        rank = MPI.COMM_WORLD.Get_rank()
-        name = MPI.Get_processor_name()
-        task, task_arg = data
-        print('  Slave %s rank %d executing "%s" task_id "%d"' % (name, rank, task, task_arg) )
-        return (True, 'I completed my task (%d)' % task_arg)
+
+        task, task_id, resource = data
+
+        print('  Slave rank %d executing "%s" task id "%d" with resource "%s"' % 
+             (MPI.COMM_WORLD.Get_rank(), task, task_id, str(resource)) )
+
+        #
+        # The slave can check if it has already acquired the resource and save
+        # time
+        #
+        if self.resource != resource:
+            #
+            # simulate the time required to acquire this resource
+            #
+            time.sleep(10)
+            self.resource = resource
+
+        # Make use of the resource in some way and then return
+        return (True, 'I completed my task (%d)' % task_id)
 
 
 def main():

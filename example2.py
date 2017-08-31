@@ -71,7 +71,7 @@ class MySlave(Slave):
         rank = MPI.COMM_WORLD.Get_rank()
         name = MPI.Get_processor_name()
         task, task_arg = data
-        print('  Slave %s rank %d executing "%s" with "%d"' % (name, rank, task, task_arg) )
+        print('  Slave %s rank %d executing "%s" task_id "%d"' % (name, rank, task, task_arg) )
         return (True, 'I completed my task (%d)' % task_arg)
 
 
