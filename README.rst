@@ -671,10 +671,6 @@ This is the Slave code that simulate the time required to initialize the job for
 .. code:: python
 
     class MySlave(Slave):
-        """
-        A slave process extends Slave class, overrides the 'do_work' method
-        and calls 'Slave.run'. The Master will do the rest
-        """
 
         def __init__(self):
             super(MySlave, self).__init__()
@@ -732,14 +728,9 @@ On the Master code there is little to change from example 1. Both WorkQueue.add_
 
 
 
-WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource, that is:
+WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource.
 
-* Try to assign this slave to its previous resource
-* Try to assign this slave to a resource nobody else is using
-* Finally, try to assign this slave to any resource
-
-
-We can test the code and see that each slave keep processing the same resource until all the tasks associated with that resource are completed and the slave starts processing another resource:
+We can test the code and see that each slave keep processing the same resource until all the tasks associated with that resource are completed. At that point the slave starts processing another resource:
 
 ::
 
