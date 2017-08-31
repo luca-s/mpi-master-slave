@@ -1,89 +1,50 @@
 from mpi4py import MPI
 from mpi.master_slave import Master, Slave
-from mpi.multi_work_queue import MultiWorkQueue
+from mpi.work_queue import WorkQueue
 from enum import IntEnum
 import random
 import time
 
 Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
 
-
-class MyMaster(Master):
-    """
-    This Master class handles a specific task
-    """
-
-    def __init__(self, task, slaves = None):
-        super(MyMaster, self).__init__(slaves)
-        self.task = task
-
-    def run(self, slave, data):
-        args = (self.task, data)
-        super(MyMaster, self).run(slave, args)
-
-    def get_data(self, completed_slave):
-        task, data = super(MyMaster, self).get_data(completed_slave)
-        return data
-
-
 class MyApp(object):
     """
     This is my application that has a lot of work to do so it gives work to do
     to its slaves until all the work is done. There different type of work so
-    the slaves must be able to do different tasks.
-    Also want to limit the number of slaves reserved to one or more tasks. We
-    make use of the MultiWorkQueue class that handles multiple Masters and where
-    each Master can have an optional limits on the number of slaves.
-    MultiWorkQueue moves slaves between Masters when some of them are idles and
-    gives slaves back when the Masters have work again.
+    the slaves must be able to do different tasks
     """
 
-    def __init__(self, slaves,  task1_num_slave=None, task2_num_slave=None, task3_num_slave=None):
-        """
-        Each task/master can be limited on the number of slaves by the init
-        arguments. Leave them None if you don't want to limit a specific Master
-        """
-        #
-        # create a Master for each task
-        #
-        self.master1 = MyMaster(task=Tasks.TASK1)
-        self.master2 = MyMaster(task=Tasks.TASK2)
-        self.master3 = MyMaster(task=Tasks.TASK3)
-
-        #
-        # MultiWorkQueue is a convenient class that run multiple work queues
-        # Each task needs a Tuple  with (someID, Master, None or max slaves)
-        #
-        masters_details = [(Tasks.TASK1, self.master1, task1_num_slave),
-                           (Tasks.TASK2, self.master2, task2_num_slave),
-                           (Tasks.TASK3, self.master3, task3_num_slave) ]
-        self.work_queue = MultiWorkQueue(slaves, masters_details)
-
+    def __init__(self, slaves):
+        # when creating the Master we tell it what slaves it can handle
+        self.master = Master(slaves)
+        # WorkQueue is a convenient class that run slaves on a tasks queue
+        self.work_queue = WorkQueue(self.master)
 
     def terminate_slaves(self):
         """
         Call this to make all slaves exit their run loop
         """
-        self.master1.terminate_slaves()
-        self.master2.terminate_slaves()
-        self.master3.terminate_slaves()
+        self.master.terminate_slaves()
 
     def __add_next_task(self, i, task=None):
         """
-        Create random tasks 1-3 and add it to the right work queue
+        we create random tasks 1-3 and add it to the work queue
+        Every task has specific arguments
         """
         if task is None:
             task = random.randint(1,3)
 
         if task == 1:
             args = i
-            self.work_queue.add_work(Tasks.TASK1, args)
+            data = (Tasks.TASK1, args)
         elif task == 2:
             args = (i, i*2)
-            self.work_queue.add_work(Tasks.TASK2, args)
+            data = (Tasks.TASK2, args)
         elif task == 3:
             args = (i, 999, 'something')
-            self.work_queue.add_work(Tasks.TASK3, args)
+            data = (Tasks.TASK3, args)
+
+        self.work_queue.add_work(data)
 
     def run(self, tasks=100):
         """
@@ -111,20 +72,19 @@ class MyApp(object):
             #
             # reclaim returned data from completed slaves
             #
-            for data in self.work_queue.get_completed_work(Tasks.TASK1):
-                done, arg1 = data
+            for slave_return_data in self.work_queue.get_completed_work():
+                #
+                # each task type has its own return type
+                #
+                task, data = slave_return_data
+                if task == Tasks.TASK1:
+                    done, arg1 = data
+                elif task == Tasks.TASK2:
+                    done, arg1, arg2, arg3 = data
+                elif task == Tasks.TASK3:
+                    done, arg1, arg2 = data    
                 if done:
-                    print('Master: slave finished his task returning: %s)' % str(data))
-
-            for data in self.work_queue.get_completed_work(Tasks.TASK2):
-                done, arg1, arg2, arg3 = data
-                if done:
-                    print('Master: slave finished his task returning: %s)' % str(data))
-
-            for data in self.work_queue.get_completed_work(Tasks.TASK3):
-                done, arg1, arg2 = data
-                if done:
-                    print('Master: slave finished his task returning: %s)' % str(data))
+                    print('Master: slave finished is task returning: %s)' % str(data))
 
             # sleep some time
             time.sleep(0.3)
@@ -178,6 +138,7 @@ class MySlave(Slave):
         return (task, ret)
 
 
+
 def main():
 
     name = MPI.Get_processor_name()
@@ -188,7 +149,7 @@ def main():
 
     if rank == 0: # Master
 
-        app = MyApp(slaves=range(1, size), task1_num_slave=2, task2_num_slave=None, task3_num_slave=1)
+        app = MyApp(slaves=range(1, size))
         app.run()
         app.terminate_slaves()
 

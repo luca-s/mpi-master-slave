@@ -1,17 +1,13 @@
 from mpi4py import MPI
 from mpi.master_slave import Master, Slave
 from mpi.work_queue import WorkQueue
-from enum import IntEnum
-import random
 import time
-
-Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
+import random
 
 class MyApp(object):
     """
     This is my application that has a lot of work to do so it gives work to do
-    to its slaves until all the work is done. There different type of work so
-    the slaves must be able to do different tasks
+    to its slaves until all the work is done
     """
 
     def __init__(self, slaves):
@@ -26,26 +22,6 @@ class MyApp(object):
         """
         self.master.terminate_slaves()
 
-    def __add_next_task(self, i, task=None):
-        """
-        we create random tasks 1-3 and add it to the work queue
-        Every task has specific arguments
-        """
-        if task is None:
-            task = random.randint(1,3)
-
-        if task == 1:
-            args = i
-            data = (Tasks.TASK1, args)
-        elif task == 2:
-            args = (i, i*2)
-            data = (Tasks.TASK2, args)
-        elif task == 3:
-            args = (i, 999, 'something')
-            data = (Tasks.TASK3, args)
-
-        self.work_queue.add_work(data)
-
     def run(self, tasks=100):
         """
         This is the core of my application, keep starting slaves
@@ -57,7 +33,12 @@ class MyApp(object):
         # but it can also be added later as more work become available
         #
         for i in range(tasks):
-            self.__add_next_task(i)
+            #
+            # the slave will be working on one out of 3 resources
+            #
+            resource_id = random.randint(1, 3)
+            data = ('Do something', i, resource_id)
+            self.work_queue.add_work(data, resource_id)
        
         #
         # Keeep starting slaves as long as there is work to do
@@ -73,18 +54,9 @@ class MyApp(object):
             # reclaim returned data from completed slaves
             #
             for slave_return_data in self.work_queue.get_completed_work():
-                #
-                # each task type has its own return type
-                #
-                task, data = slave_return_data
-                if task == Tasks.TASK1:
-                    done, arg1 = data
-                elif task == Tasks.TASK2:
-                    done, arg1, arg2, arg3 = data
-                elif task == Tasks.TASK3:
-                    done, arg1, arg2 = data    
+                done, message = slave_return_data
                 if done:
-                    print('Master: slave finished is task returning: %s)' % str(data))
+                    print('Master: slave finished is task and says "%s"' % message)
 
             # sleep some time
             time.sleep(0.3)
@@ -94,49 +66,32 @@ class MySlave(Slave):
     """
     A slave process extends Slave class, overrides the 'do_work' method
     and calls 'Slave.run'. The Master will do the rest
-
-    In this example we have different tasks but instead of creating a Slave for
-    each type of taks we create only one class that can handle any type of work.
-    This avoids having idle processes if, at certain times of the execution, there
-    is only a particular type of work to do but the Master doesn't have the right
-    slave for that task.
     """
 
     def __init__(self):
         super(MySlave, self).__init__()
+        self.resource = None
 
-    def do_work(self, args):
-        
-        # the data contains the task type
-        task, data = args
+    def do_work(self, data):
 
-        rank = MPI.COMM_WORLD.Get_rank()
-        name = MPI.Get_processor_name()
+        task, task_id, resource = data
+
+        print('  Slave rank %d executing "%s" task id "%d" with resource "%s"' % 
+             (MPI.COMM_WORLD.Get_rank(), task, task_id, str(resource)) )
 
         #
-        # Every task type has its specific data input and return output
+        # The slave can check if it has already acquired the resource and save
+        # time
         #
-        ret = None
-        if task == Tasks.TASK1:
+        if self.resource != resource:
+            #
+            # simulate the time required to acquire this resource
+            #
+            time.sleep(10)
+            self.resource = resource
 
-            arg1 = data
-            print('  Slave %s rank %d executing %s with task_id %d' % (name, rank, task, arg1) )
-            ret = (True, arg1)
-
-        elif task == Tasks.TASK2:
-
-            arg1, arg2 = data
-            print('  Slave %s rank %d executing %s with task_id %d arg2 %d' % (name, rank, task, arg1, arg2) )
-            ret = (True, arg1, 'something', 'else')
-
-        elif task == Tasks.TASK3:
-
-            arg1, arg2, arg3 = data
-            print('  Slave %s rank %d executing %s with task_id %d arg2 %d arg3 %s' % (name, rank, task, arg1, arg2, arg3) )
-            ret = (True, arg1, 'something')
-
-        return (task, ret)
-
+        # Make use of the resource in some way and then return
+        return (True, 'I completed my task (%d)' % task_id)
 
 
 def main():

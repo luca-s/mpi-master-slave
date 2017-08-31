@@ -126,11 +126,13 @@ More advanced exaples are explained at the end of this tutorial, here is a summa
 
 `Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ is the **same code above without the WorkQueue class**, this is helpful in case you need to have more control of your Master.
 
-`Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how **slaves can handle multiple type of tasks.** 
+`Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how to avoid random assignment of tasks to slaves and to enforce assignemnt of tasks to the slaves slaves that can make use of computation or initialization already performed on the previous task.
 
-`Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
+`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how **slaves can handle multiple type of tasks.** 
 
-`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to avoid random assignment of tasks to slaves and to enforce assignemnt of tasks to the slaves slaves that can make use of computation or initialization already performed on the previous task.
+`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
+
+
 
 
 
@@ -319,11 +321,99 @@ From the output above we can see most of the Master time is spent in time.sleep 
 More examples covering common scenarios
 ---------------------------------------
 
-
 Example 3
 ---------
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we'll see how to assign specific tasks to specific slaves. This is useful when slaves have a long initialization time (resource acquicistion from database, network folder, or any long preparation step) and they can skip this initialization if they get assigned tasks involbing the same resources.
+
+This is a common scenario when a slave has to perform an initial resources loading (from Database, network directory, network service, etc) before starting the computation. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slace has the resources in memory already.
+
+This is the Slave code that simulate the time required to initialize the job for a specific resource.
+
+.. code:: python
+
+    class MySlave(Slave):
+
+        def __init__(self):
+            super(MySlave, self).__init__()
+            self.resource = None
+
+        def do_work(self, data):
+
+            task, task_id, resource = data
+
+            print('  Slave rank %d executing "%s" task id "%d" with resource "%s"' % 
+                 (MPI.COMM_WORLD.Get_rank(), task, task_id, str(resource)) )
+
+            #
+            # The slave can check if it has already acquired the resource and save
+            # time
+            #
+            if self.resource != resource:
+                #
+                # simulate the time required to acquire this resource
+                #
+                time.sleep(10)
+                self.resource = resource
+
+            # Make use of the resource in some way and then return
+            return (True, 'I completed my task (%d)' % task_id)
+
+
+On the Master code there is little to change from example 1. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
+
+.. code:: python
+
+    WorkQueue.add_work(data, resource=some_id)
+    MultiWorkQueue.add_work(task_id, data, resource=some_id)
+
+
+.. code:: python
+
+    class MyApp(object):
+
+        [...]
+
+        def run(self, tasks=100):
+
+            [...]
+
+            for i in range(tasks):
+                #
+                # the slave will be working on one out of 3 resources
+                #
+                resource_id = random.randint(1, 3)
+                data = ('Do something', i, resource_id)
+                self.work_queue.add_work(data, resource_id)
+           
+            [...]
+
+
+
+WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource.
+
+We can test the code and see that each slave keep processing the same resource until all the tasks associated with that resource are completed. At that point the slave starts processing another resource:
+
+::
+
+    mpiexec -n 4 xterm -e "python example5.py ; bash"
+
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3.png
+
+
+::
+
+    mpiexec -n 6 xterm -e "python example5.py ; bash"
+
+
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3bis.png
+
+
+
+Example 4
+---------
+
+In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
 
 .. code:: python
 
@@ -513,10 +603,10 @@ Ourput
 
 
 
-Example 4
+Example 5
 ---------
 
-In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
+In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 In this example the Slave code is the same as the previous one but now each task has its own Master instead of letting a single Master handling all the tasks.
 
 .. code:: python
@@ -655,94 +745,8 @@ For example, you can test the application like this:
 You can see from the output the number of slaves for task1 is 2, task3 is 1 and task2 takes all the remaining slaves:
 
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example4.png
-
-
-
-Example 5
----------
-
-In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ we'll see how to assign specific tasks to specific slaves. This is useful when slaves have a long initialization time (resource acquicistion from database, network folder, or any long preparation step) and they can skip this initialization if they get assigned tasks involbing the same resources.
-
-This is a common scenario when a slave has to perform an initial resources loading (from Database, network directory, network service, etc) before starting the computation. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slace has the resources in memory already.
-
-This is the Slave code that simulate the time required to initialize the job for a specific resource.
-
-.. code:: python
-
-    class MySlave(Slave):
-
-        def __init__(self):
-            super(MySlave, self).__init__()
-            self.resource = None
-
-        def do_work(self, data):
-
-            task, task_id, resource = data
-
-            print('  Slave rank %d executing "%s" task id "%d" with resource "%s"' % 
-                 (MPI.COMM_WORLD.Get_rank(), task, task_id, str(resource)) )
-
-            #
-            # The slave can check if it has already acquired the resource and save
-            # time
-            #
-            if self.resource != resource:
-                #
-                # simulate the time required to acquire this resource
-                #
-                time.sleep(10)
-                self.resource = resource
-
-            # Make use of the resource in some way and then return
-            return (True, 'I completed my task (%d)' % task_id)
-
-
-On the Master code there is little to change from example 1. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
-
-.. code:: python
-
-    WorkQueue.add_work(data, resource=some_id)
-    WorkQueue.add_work(data, resource=some_id)
-
-
-.. code:: python
-
-    class MyApp(object):
-
-        [...]
-
-        def run(self, tasks=100):
-
-            [...]
-
-            for i in range(tasks):
-                #
-                # the slave will be working on one out of 3 resources
-                #
-                resource_id = random.randint(1, 3)
-                data = ('Do something', i, resource_id)
-                self.work_queue.add_work(data, resource_id)
-           
-            [...]
-
-
-
-WorkQueue and  MultiWorkQueue will try their best to assign the same resource id to a slave that has previously worked with the same resource.
-
-We can test the code and see that each slave keep processing the same resource until all the tasks associated with that resource are completed. At that point the slave starts processing another resource:
-
-::
-
-    mpiexec -n 4 xterm -e "python example5.py ; bash"
-
 .. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example5.png
 
 
-::
 
-    mpiexec -n 6 xterm -e "python example5.py ; bash"
-
-
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example5bis.png
 
