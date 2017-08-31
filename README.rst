@@ -364,8 +364,8 @@ On the Master code there is little to change from example 1. Both WorkQueue.add_
 
 .. code:: python
 
-    WorkQueue.add_work(data, resource=some_id)
-    MultiWorkQueue.add_work(task_id, data, resource=some_id)
+    WorkQueue.add_work(data, resource_id=some_id)
+    MultiWorkQueue.add_work(task_id, data, resource_id=some_id)
 
 
 .. code:: python
