@@ -128,7 +128,7 @@ More advanced exaples are explained at the end of this tutorial, here is a summa
 
 `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how to avoid random assignment of tasks to slaves and to enforce assignemnt of tasks to the slaves slaves that can make use of computation or initialization already performed on the previous task.
 
-`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how **slaves can handle multiple type of tasks.** 
+`Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how **slaves can handle multiple type of tasks.** 
 
 `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 
@@ -396,14 +396,14 @@ We can test the code and see that each slave keep processing the same resource u
 
 ::
 
-    mpiexec -n 4 xterm -e "python example5.py ; bash"
+    mpiexec -n 4 xterm -e "python example3.py ; bash"
 
 .. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3.png
 
 
 ::
 
-    mpiexec -n 6 xterm -e "python example5.py ; bash"
+    mpiexec -n 6 xterm -e "python example3.py ; bash"
 
 
 .. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3bis.png
@@ -530,7 +530,7 @@ Ourput
 
 ::
 
-    $ mpiexec -n 16 python example3.py
+    $ mpiexec -n 16 python example4.py
 
     I am  lucasca-desktop rank 8 (total 16)
     I am  lucasca-desktop rank 15 (total 16)
@@ -739,7 +739,7 @@ For example, you can test the application like this:
 
 ::
 
-    mpiexec -n 9 xterm -e "python example4.py ; bash"
+    mpiexec -n 9 xterm -e "python example5.py ; bash"
 
 
 You can see from the output the number of slaves for task1 is 2, task3 is 1 and task2 takes all the remaining slaves:
