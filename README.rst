@@ -671,6 +671,10 @@ This is the Slave code that simulate the time required to initialize the job for
 .. code:: python
 
     class MySlave(Slave):
+        """
+        A slave process extends Slave class, overrides the 'do_work' method
+        and calls 'Slave.run'. The Master will do the rest
+        """
 
         def __init__(self):
             super(MySlave, self).__init__()
@@ -678,10 +682,10 @@ This is the Slave code that simulate the time required to initialize the job for
 
         def do_work(self, data):
 
-            task, resource = data
+            task, task_id, resource = data
 
-            print('  Slave %s rank %d executing "%s" with resource "%s"' % 
-                 (name, MPI.COMM_WORLD.Get_rank(), task, str(resource)) )
+            print('  Slave rank %d executing "%s" task id "%d" with resource "%s"' % 
+                 (MPI.COMM_WORLD.Get_rank(), task, task_id, str(resource)) )
 
             #
             # The slave can check if it has already acquired the resource and save
@@ -692,10 +696,10 @@ This is the Slave code that simulate the time required to initialize the job for
                 # simulate the time required to acquire this resource
                 #
                 time.sleep(10)
-                self.resource = resource:
+                self.resource = resource
 
             # Make use of the resource in some way and then return
-            return (True, 'I completed my task (%d)' % task_arg)
+            return (True, 'I completed my task (%d)' % task_id)
 
 
 On the Master code there is little to change from example 1. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
@@ -706,7 +710,7 @@ On the Master code there is little to change from example 1. Both WorkQueue.add_
     WorkQueue.add_work(data, resource=some_id)
 
 
-
+.. code:: python
 
     class MyApp(object):
 
@@ -749,4 +753,5 @@ We can test the code and see that each slave keep processing the same resource u
     mpiexec -n 6 xterm -e "python example5.py ; bash"
 
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example6.png
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example5bis.png
+
