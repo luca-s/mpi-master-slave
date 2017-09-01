@@ -6,19 +6,19 @@ Why MPI with Python?
 
 Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
 
-Also I just want to remember that MPI allows to scale you application, that means it can handle indefinite amount of work given that enough hardware (nodes) is avalible. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but don't allow you application to scale. 
+Also I just want to highligth that MPI allows to scale you application, that means it can handle indefinite amount of work given that enough hardware (nodes) is avalible. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but don't allow you application to scale. 
 
-Also, keep in mind that MPI can be used on your local machine spawing a process for each core. The resulting performance are comparable with multithreded code, execpt that multithreding is much easier to achieve because it doesn't enforce a strinct design of your application as it happens with MPI.
+MPI can also be used on your local machine spawing a process for each core, so you don't need a cluster. The resulting performance are comparable with multithreded code but usually is quicker to modify your application to support multithreding while MPI enforce a strinct design of your application as each process cannot share memory with others.
 
 
 Writing you application
 -----------------------
 
-Here and at the end of this little tutorial, we'll cover meaningful example code that is actually ready to be used in your projects. Especially the last examples are advanced code templates ready to be used so that you can focus on your specific problem and don't spend too much time in handling Master/Slave MPI issues.
+Here and at the end of this little tutorial, we'll cover meaningful example code that can serve as base for your projects.
 
 `Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
 
-Writing a master slave application is as simple as extenging Slave class and implementing the 'do_work' method and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue is completed.
+Writing a master slave application is as simple as extenging Slave class, implementing the 'do_work' method with the specific task you need and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue (the list of tasks your application has to do) is empty.
 
 
 .. code:: python
@@ -58,7 +58,7 @@ Writing a master slave application is as simple as extenging Slave class and imp
             for i in range(tasks):
                 # 'data' will be passed to the slave and can be anything
                 self.work_queue.add_work(data=('Do task', i))
-           
+
             #
             # Keeep starting slaves as long as there is work to do
             #
@@ -124,16 +124,13 @@ Writing a master slave application is as simple as extenging Slave class and imp
 
 More advanced exaples are explained at the end of this tutorial, here is a summary:
 
-`Example 2 <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ is the **same code above without the WorkQueue class**, this is helpful in case you need to have more control of your Master.
+`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ is the same code above without the WorkQueue class, this is helpful in case you like to know have the Master class works.
 
-`Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how to avoid random assignment of tasks to slaves and to enforce assignemnt of tasks to the slaves slaves that can make use of computation or initialization already performed on the previous task.
+`**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how to assign specific tasks to specific slaves so that the latter can re-use part of previous work (resource already acquired or some computation already performed)
 
-`Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how **slaves can handle multiple type of tasks.** 
+`**Example 4** <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how slaves can handle multiple type of tasks.
 
-`Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to  **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
-
-
-
+`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to  limit the number of slaves reserved to one or more type of tasks.
 
 
 
@@ -142,8 +139,10 @@ Running the application
 
 ::
 
+
     mpiexec -n 4 python example1.py
 
+If you run your application on your machine, usually you get the bet performance creatin n processes, where n is the number of core of your machine. If your Master process doesn't do any computation and it is mostly sleeping, then make n = cores + 1. In our example the best performance is n=5
 
 Output:
 
@@ -324,9 +323,7 @@ More examples covering common scenarios
 Example 3
 ---------
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we'll see how to assign specific tasks to specific slaves. This is useful when slaves have a long initialization time (resource acquicistion from database, network folder, or any long preparation step) and they can skip this initialization if they get assigned tasks involbing the same resources.
-
-This is a common scenario when a slave has to perform an initial resources loading (from Database, network directory, network service, etc) before starting the computation. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slace has the resources in memory already.
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of previous work.  This is a common scenario when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slave has the resources in memory already.
 
 This is the Slave code that simulate the time required to initialize the job for a specific resource.
 
