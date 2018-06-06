@@ -4,7 +4,7 @@ setup(
     name='mpi-master-slave',
     version='0.1.0',
     author='luca-s, Landon T. Clipp',
-    author_email='clipp2@illinois.edu',
+    author_email='luca.scarabello@gmail.com',
     packages=['mpi_master_slave'],
     install_requires=['mpi4py'],
     description='An MPI master-slave library for Python',

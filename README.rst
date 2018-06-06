@@ -1,6 +1,8 @@
 mpi-master-slave: Easy to use mpi master slave library with mpi4py
 ==================================================================
 
+author: Luca Scarabello
+
 Why MPI with Python?
 --------------------
 
