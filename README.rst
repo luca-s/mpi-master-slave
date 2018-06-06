@@ -127,15 +127,15 @@ Writing a master slave application is as simple as extenging Slave class, implem
         main()
 
 
-More advanced exaples are explained at the end of this tutorial, here is a summary:
+More advanced topics are covered later in this tutorial, here is a summary:
 
-`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example2.py>`__ is the same code above without the WorkQueue class, this is helpful in case you like to know have the Master class works.
+`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example2.py>`__ is the same code above without the WorkQueue utility class, this might be helpful to have a better understanding on how the Master class works.
 
-`**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ shows how to assign specific tasks to specific slaves so that the latter can re-use part of previous work (resource already acquired or some computation already performed)
+`**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ shows how to bind specific tasks to specific slaves,  so that a slave can re-use resources already acquired in a previous run or re-use part of a previous computation.
 
 `**Example 4** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example4.py>`__ shows how slaves can handle multiple type of tasks.
 
-`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ shows how to  limit the number of slaves reserved to one or more type of tasks.
+`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ shows how to  limit the number of slaves reserved to one task.
 
 
 
@@ -325,12 +325,12 @@ From the output above we can see most of the Master time is spent in time.sleep 
 More examples covering common scenarios
 ---------------------------------------
 
-Example 3
----------
+Example 3 - Binding specific tasks to specific slaves
+-----------------------------------------------------
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of previous work.  This is a common scenario when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slave has the resources in memory already.
-
-This is the Slave code that simulate the time required to initialize the job for a specific resource.
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of its previous work.  This is a common requirement when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded those resources, that would save much time.
+                                                                                                                                                     i
+This is the Slave code, where we simulate the time required to acquire a resource at job initialization. If the same resource is asked again the next time the Slave is called, that is not loaded again. We'll see how the Master is able to avoid loading multiple times the same resources calling the Slaves with the resources they have already acquired.
 
 .. code:: python
 
@@ -362,7 +362,7 @@ This is the Slave code that simulate the time required to initialize the job for
             return (True, 'I completed my task (%d)' % task_id)
 
 
-On the Master code there is little to change from example 1. Both WorkQueue.add_work and MultiWorkQueue.add_work methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the data is going to need. 
+On the Master code there is little to change from example 1 code. Both WorkQueue.add_work and MultiWorkQueue.add_work (explained later) methods support an additional parameter **resource** that is a simple identifier (string, integer or any hashable object) that specify what resource the task is going to need.
 
 .. code:: python
 
@@ -412,8 +412,8 @@ We can test the code and see that each slave keep processing the same resource u
 
 
 
-Example 4
----------
+Example 4 - Slaves and multiple tasks
+-------------------------------------
 
 In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example4.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
 
@@ -422,7 +422,7 @@ In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/e
     Tasks = IntEnum('Tasks', 'TASK1 TASK2 TASK3')
 
 
-Instead of extending a Slave class for each type of task we have, we create only one class that can handle any type of work. This avoids having idle processes if, at certain times of the execution, there is only a particular type of work to do but the Master doesn't have the right slave for that task. If any slave can do any job, there is always a slave that can perform that task.
+Instead of extending a Slave class for each type of task we have, we create only one class that can handle any type of work. This is useful because it prevents having idle processes. That can happen if, at certain times of the execution, there is only a particular type of work to do but the Master doesn't have the right slave for that task. If any slave can do any job, there is always a slave that can perform that task.
 
 .. code:: python
 
@@ -461,7 +461,7 @@ Instead of extending a Slave class for each type of task we have, we create only
             return (task, ret)
 
 
-The master simply passes the task type to the slave together with the task specific data.
+The master needs only few changes to handle the multiple task types. It has to pass the task type to the slave together with the task specific data, so that the Slave knows what task it has to perform. Then, when a task is completed, the Master has to handle the return data differently and accordingly with the task type.
 
 .. code:: python
 
@@ -479,7 +479,7 @@ The master simply passes the task type to the slave together with the task speci
                 self.__add_next_task(i)
            
             #
-            # Keeep starting slaves as long as there is work to do
+            # Keeep starting slaves as long as there is work to do                                                                                   1
             #
             while not self.work_queue.done():
 
@@ -605,11 +605,12 @@ Ourput
 
 
 
-Example 5
----------
+Example 5 - Limiting the number of slaves for certain tasks
+-----------------------------------------------------------
 
-In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
-In this example the Slave code is the same as the previous one but now each task has its own Master instead of letting a single Master handling all the tasks.
+In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ the slaves handle multiple type of tasks and the Master is able to **limit the number of slaves reserved to one or more tasks**. This comes handy when one or more tasks deal with resources, such as database connections, network services etc, and you have to limit the number of concurrent accesses to those resources. In this scenario the Master is able to limit the number of Slaves assigned to those critical task types, while using the rest of the Slaves for all the task types that have no limitations.
+
+In this example the Slave code is the same as the previous one but the Master part changes. Each task has its own Master instead of letting a single Master handle all the tasks. Here is the code for the Master that handle only a specific task.
 
 .. code:: python
 
@@ -631,9 +632,9 @@ In this example the Slave code is the same as the previous one but now each task
             return data
 
 
-At this point one could create each Master with a specific number of slaves and a WorkQueue for each Master. Unfortunately this would produce bad performance as one or more Masters might not have tasks to do at certain times of the execution and their slaves would be idle while other Masters might have plenty of work to do.
+At this point one could be tempted to create a Master for each task type and to assign a specific number of slaves and a WorkQueue to each Master. That would work but unfortunately it would produce bad performance. One or more Masters might not have tasks to do at certain times of the execution and their slaves would be idle while other Masters might have plenty of work to do but they would be unable to access the Slaves owned by the other Masters.
 
-What we want to achieve is to let Masters lend/borrow slaves with each others when they are idle so that they make the most out of their slaves. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limit on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
+What we want to achieve is to let Masters lend/borrow slaves with each others when the Slaves are idle, so that no Slaves is going to be useless. To do that we make use of the MultiWorkQueue class that handles multiple Masters and where each Master can have an optional limit on the number of slaves. MultiWorkQueue moves slaves between Masters when some of them are idles and gives slaves back when the Masters have work again.
 
 .. code:: python
 
