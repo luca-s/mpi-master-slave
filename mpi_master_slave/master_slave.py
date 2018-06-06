@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 Tags = IntEnum('Tags', 'READY START DONE EXIT')
 
 __all__ = ['Master', 'Slave']
+__author__ = 'Luca Scarabello'
 
 class Master:
     """

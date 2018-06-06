@@ -2,8 +2,8 @@ from setuptools import setup
 import os
 setup(
     name='mpi-master-slave',
-    version='0.1.0',
-    author='luca-s, Landon T. Clipp',
+    version='0.2.1',
+    author='luca-s',
     author_email='luca.scarabello@gmail.com',
     packages=['mpi_master_slave'],
     install_requires=['mpi4py'],

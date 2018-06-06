@@ -1,5 +1,7 @@
 __all__=['WorkQueue']
 
+__author__='Luca Scarabello'
+
 class WorkQueue:
     """
     Handle a work queue on a particular Master

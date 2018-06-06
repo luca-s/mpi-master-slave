@@ -1,6 +1,7 @@
 from mpi_master_slave import WorkQueue
 
 __all__=['MultiWorkQueue']
+__author__ = 'Luca Scarabello'
 
 class MultiWorkQueue:
     """
