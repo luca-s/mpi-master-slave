@@ -1,6 +1,6 @@
 from mpi4py import MPI
-from mpi.master_slave import Master, Slave
-from mpi.multi_work_queue import MultiWorkQueue
+from mpi_master_slave import Master, Slave
+from mpi_master_slave import MultiWorkQueue
 from enum import IntEnum
 import random
 import time

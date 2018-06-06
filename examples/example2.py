@@ -1,5 +1,5 @@
 from mpi4py import MPI
-from mpi.master_slave import Master, Slave
+from mpi_master_slave import Master, Slave
 import time
 
 class MyApp(object):

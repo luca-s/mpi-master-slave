@@ -16,7 +16,7 @@ Writing you application
 
 Here and at the end of this little tutorial, we'll cover meaningful example code that can serve as base for your projects.
 
-`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/example1.py>`__
+`Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example1.py>`__
 
 Writing a master slave application is as simple as extenging Slave class, implementing the 'do_work' method with the specific task you need and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue (the list of tasks your application has to do) is empty.
 
@@ -24,8 +24,8 @@ Writing a master slave application is as simple as extenging Slave class, implem
 .. code:: python
 
     from mpi4py import MPI
-    from mpi.master_slave import Master, Slave
-    from mpi.work_queue import WorkQueue
+    from mpi_master_slave import Master, Slave
+    from mpi_master_slave import WorkQueue
     import time
 
     class MyApp(object):
@@ -124,13 +124,13 @@ Writing a master slave application is as simple as extenging Slave class, implem
 
 More advanced exaples are explained at the end of this tutorial, here is a summary:
 
-`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/example2.py>`__ is the same code above without the WorkQueue class, this is helpful in case you like to know have the Master class works.
+`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example2.py>`__ is the same code above without the WorkQueue class, this is helpful in case you like to know have the Master class works.
 
-`**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ shows how to assign specific tasks to specific slaves so that the latter can re-use part of previous work (resource already acquired or some computation already performed)
+`**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ shows how to assign specific tasks to specific slaves so that the latter can re-use part of previous work (resource already acquired or some computation already performed)
 
-`**Example 4** <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ shows how slaves can handle multiple type of tasks.
+`**Example 4** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example4.py>`__ shows how slaves can handle multiple type of tasks.
 
-`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ shows how to  limit the number of slaves reserved to one or more type of tasks.
+`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ shows how to  limit the number of slaves reserved to one or more type of tasks.
 
 
 
@@ -192,7 +192,7 @@ We'll open a xterm terminal for each mpi process so that we can debug each proce
 
 "bash" is optional - it ensures that the xterm windows will stay open; even if finished
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/debugging.png
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/examples/debugging.png
 
 Option 1: if you want the debugger to stop at a specific position in the code then add the following at the line where you want the debugger to stop:
 
@@ -323,7 +323,7 @@ More examples covering common scenarios
 Example 3
 ---------
 
-In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of previous work.  This is a common scenario when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slave has the resources in memory already.
+In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of previous work.  This is a common scenario when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded that resources, that would save much time becasue the slave has the resources in memory already.
 
 This is the Slave code that simulate the time required to initialize the job for a specific resource.
 
@@ -395,7 +395,7 @@ We can test the code and see that each slave keep processing the same resource u
 
     mpiexec -n 4 xterm -e "python example3.py ; bash"
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3.png
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/examples/example3.png
 
 
 ::
@@ -403,14 +403,14 @@ We can test the code and see that each slave keep processing the same resource u
     mpiexec -n 6 xterm -e "python example3.py ; bash"
 
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example3bis.png
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/examples/example3bis.png
 
 
 
 Example 4
 ---------
 
-In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/example4.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
+In `Example 4 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example4.py>`__ we can see how to the **slaves can handle multiple type of tasks.** 
 
 .. code:: python
 
@@ -603,7 +603,7 @@ Ourput
 Example 5
 ---------
 
-In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/example5.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
+In `Example 5 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ we still have that slaves handle multiple type of tasks but we also want to **limit the number of slaves reserved to one or more tasks**. This comes handy when, for example, one or more tasks deal with resources such as database conncetions, network services and so on, and you have to limit the number of concurrent accesses to those resources. 
 In this example the Slave code is the same as the previous one but now each task has its own Master instead of letting a single Master handling all the tasks.
 
 .. code:: python
@@ -742,7 +742,7 @@ For example, you can test the application like this:
 You can see from the output the number of slaves for task1 is 2, task3 is 1 and task2 takes all the remaining slaves:
 
 
-.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/example5.png
+.. image:: https://github.com/luca-s/mpi-master-slave/raw/master/examples/example5.png
 
 
 

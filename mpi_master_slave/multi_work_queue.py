@@ -1,6 +1,8 @@
-from .work_queue import WorkQueue
+from mpi_master_slave import WorkQueue
 
-class MultiWorkQueue(object):
+__all__=['MultiWorkQueue']
+
+class MultiWorkQueue:
     """
     Handle multiple work queues
     """

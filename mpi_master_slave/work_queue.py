@@ -1,5 +1,6 @@
+__all__=['WorkQueue']
 
-class WorkQueue(object):
+class WorkQueue:
     """
     Handle a work queue on a particular Master
     """
