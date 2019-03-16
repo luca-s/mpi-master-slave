@@ -11,7 +11,7 @@ Why MPI with Python?
 
 Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
 
-Also I just want to highligth that MPI allows to scale you application, that means it can handle indefinite amount of work given that enough hardware (nodes) is avalible. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but don't allow you application to scale. 
+Also I just want to highligth that MPI allows to scale an application, that means it can handle indefinite amount of work given that enough hardware (computing nodes) is available. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but doesn't allow you application to scale with the size of the input.
 
 MPI can also be used on your local machine spawing a process for each core, so you don't need a cluster. The resulting performance are comparable with multithreded code but usually is quicker to modify your application to support multithreding while MPI enforce a strinct design of your application as each process cannot share memory with others.
 
@@ -23,7 +23,7 @@ Here and at the end of this little tutorial, we'll cover meaningful example code
 
 `Example 1 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example1.py>`__
 
-Writing a master slave application is as simple as extenging Slave class, implementing the 'do_work' method with the specific task you need and creating a Master object that controls the slaves. In this example we use WorkQueue too, a convenient class that keeps running slaves until the work queue (the list of tasks your application has to do) is empty.
+Writing a master slave application is as simple as extending the "Slave" class, implementing the 'do_work' method with the specific task that has to be performed and creating a "Master" object that controls the slaves. In the following example we'll use "WorkQueue" too, a convenient class that handle slaves (start, stop, check status, gather results) until the work queue (the list of tasks your application has to do) is empty.
 
 
 .. code:: python
@@ -82,7 +82,7 @@ Writing a master slave application is as simple as extenging Slave class, implem
                     if done:
                         print('Master: slave finished is task and says "%s"' % message)
 
-                # sleep some time
+                # sleep some time: this is a crucial detail discussed below!
                 time.sleep(0.3)
 
 
@@ -129,13 +129,13 @@ Writing a master slave application is as simple as extenging Slave class, implem
 
 More advanced topics are covered later in this tutorial, here is a summary:
 
-`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example2.py>`__ is the same code above without the WorkQueue utility class, this might be helpful to have a better understanding on how the Master class works.
+`**Example 2** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example2.py>`__ is the same example as above but without the WorkQueue utility class. It might be helpful to have a better understanding on how the Master class works and what WorkQueue internally does.
 
 `**Example 3** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ shows how to bind specific tasks to specific slaves,  so that a slave can re-use resources already acquired in a previous run or re-use part of a previous computation.
 
 `**Example 4** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example4.py>`__ shows how slaves can handle multiple type of tasks.
 
-`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ shows how to  limit the number of slaves reserved to one task.
+`**Example 5** <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example5.py>`__ shows how to limit the number of slaves reserved to one particular task when there are multiple types of tasks that the slaves can handle.
 
 
 
@@ -146,8 +146,6 @@ Running the application
 
 
     mpiexec -n 4 python example1.py
-
-If you run your application on your machine, usually you get the bet performance creatin n processes, where n is the number of core of your machine. If your Master process doesn't do any computation and it is mostly sleeping, then make n = cores + 1. In our example the best performance is n=5
 
 Output:
 
@@ -181,6 +179,18 @@ Output:
     Task completed (rank 1)
     Task completed (rank 3)
     Task completed (rank 0)
+
+
+
+Usually you get the best performance when creating "n" processes, where "n" is the number of cores of your machine. Though. if your Master process doesn't do much computation and it is mostly idle, then make "n = cores + 1" to avoid having an idle core on your CPU.
+
+To elaborate more on that, let's see what the master ("MyApp") in the previous example does. It periodically checks the work_queue ("work_queue.done()"), starts slaves ("work_queue.do_work()"), gathers the results ("work_queue.get_completed_work()") and finally sleeps for 0.3 second ("time.sleep(0.3)", which tells the Operating System that the master doesn't want to run for the next 0.3 second. Thus, for the next 0.3 sec, the OS has only the slaves to run, which can be assigned each of them to one of the cores. After the 0.3 sec are elapsed, the OS has again slaves+1 (the master) processes to run. The master will be assigned a time slot to run, in which it does its period duties (work_queue and stuff) and then it goes to sleep again.
+
+Since the master processing takes only few milliseconds to be accomplished and then the master goes to sleep again for other 0.3 sec, the result is that the master is running for only few milliseconds every 0.3 seconds. That is the master is sleeping most of the time. Hence, for most of the time, there are only the slaves running, one for each of the core.That's the reason why in this scenario it is more convenient to run the process with "n = cores + 1".
+
+The master cpu usage is negligible if the time spent "awake" is much much smaller than the sleep time. The ration between the awake time and the sleep time is the actual master cpu usage. E.g. if the master spent 0.2 sec to perform its job and 0.3 sec for sleeping, the master usage would be 0.2/0.3 = 66% core usage! In this case it would still be possible to increse the sleep time to make the master awake time negligible again. 
+
+What are the risks of choosing a master sleep time too big? If a slave finish its job it doesn't do anything until the master awakes and gives the slave a new task. So the ideal sleep time should be much greater than the master awake time but also much smaller than the average slave execution time.
 
 
 
@@ -325,11 +335,13 @@ From the output above we can see most of the Master time is spent in time.sleep 
 More examples covering common scenarios
 ---------------------------------------
 
+
 Example 3 - Binding specific tasks to specific slaves
 -----------------------------------------------------
 
+
 In `Example 3 <https://github.com/luca-s/mpi-master-slave/blob/master/examples/example3.py>`__ we'll see how to assign specific tasks to specific slaves so that the latter can re-use part of its previous work.  This is a common requirement when a slave has to perform an initialization phase where it acquires resources (Database, network directory, network service, etc) or it has to pre-compute something, before starting its task. If the Master can assign the next task that deal with the same resources to the slave that has already loaded those resources, that would save much time.
-                                                                                                                                                     i
+
 This is the Slave code, where we simulate the time required to acquire a resource at job initialization. If the same resource is asked again the next time the Slave is called, that is not loaded again. We'll see how the Master is able to avoid loading multiple times the same resources calling the Slaves with the resources they have already acquired.
 
 .. code:: python
