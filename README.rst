@@ -192,7 +192,7 @@ The master cpu usage is negligible if the time spent "awake" is much much smalle
 
 What are the risks of choosing a master sleep time too big? If a slave finish its job it doesn't do anything until the master awakes and gives the slave a new task. So the ideal sleep time should be much greater than the master awake time but also much smaller than the average slave execution time.
 
-
+Anyway, please remember that there is nothing wrong with a Master that is computationally expensive, simply avoid calling "time.sleep(...)" so that the master makes use of all the computing power and then call mpiexec with "n=number of cores" and one core will be used constantly by the Master.
 
 
 Debugging
