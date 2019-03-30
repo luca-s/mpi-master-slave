@@ -9,11 +9,11 @@ credits: Luca Scarabello, Landon T. Clipp
 Why MPI with Python?
 --------------------
 
-Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive (also it worth trying using Numba module before even considering using C/fortran, which allows to "compile" your code directly in Python and also allow GPU computing). There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions. Of course this is not true if the application execution time is spread among way too many parts of code, in this case it is certainly sensible to think about using a compiled or fast language for the whole software project instead of python.
+Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive (also it is worth trying using Numba module before even considering using C/fortran, which allows to "compile" your code directly in Python and allows GPU computing too). There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions. Of course this is not true if the application execution time is spread among way too many parts of code, in this case it is certainly sensible to think about using a compiled or fast language for the whole software project instead of python.
 
 Also I just want to highligth that MPI allows to scale an application, that means it allows your code to handle indefinite amount of work given that enough hardware (computing nodes) is available. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but doesn't allow your application to scale with the size of the input. That is, even if more hardware becomes available it doesn't improve the performance of the code because the code is not written in a way that it can take adavantage of the additional resources.
 
-Interesting note, MPI can be used on your local machine (no need to have a cluster) spawing a process for each core. This in turn results in performance which are comparable with multithreded code, though it usually quicker to modify your application to support multithreding while MPI enforces a strinct design of your application. So, depending on the scope of your project, you might consider a different approche.
+Interesting note, MPI can be used on your local machine (no need to have a cluster) spawing a process for each core. This in turn results in performance which are comparable with multithreded code, though it usually quicker to modify your application to support multithreding while MPI enforces a strinct design of your application. So, depending on the scope of your project, you might consider a different approach.
 
 
 Writing you application
@@ -194,10 +194,11 @@ What are the risks of choosing a master sleep time too big? When a slave complet
 
 Bottom line, the ideal master sleep time should be much greater than the master awake time but also much smaller than the average slave execution time. Whatever your choice is, make sure to berify the performance of your application using a profiler, discussed later.
 
-To make my life easier, I design my applications so that the master doesn't do anything more than what shown in the example code. This has several advantages:
-- I am sure that the master is idle most of the time and I don't have to verify this at every change in the code (so I run the code with n+1 processes)
-- The sleep time is way smaller than the average slave execution time, so I am sure I am not wasting slaves resources
-- My application scales up to thousands of slaves because the master is never a bottleneck, since it is always ready to handle slaves, it doesn't have anything else to do.
+To make my life easier, I design my applications so that the master doesn't do anything more than what shown in the example code. This has several advantages::
+
+* I am sure that the master is idle most of the time and I don't have to verify this at every change in the code (so I run the code with n+1 processes)
+* The sleep time is way smaller than the average slave execution time, so I am sure I am not wasting slaves resources
+* My application scales up to thousands of slaves because the master is never a bottleneck, since it is always ready to handle slaves, it doesn't have anything else to do.
 
 
 
@@ -360,9 +361,9 @@ It is also interesting to show the profiling output I got from running the slave
        13    1.086    0.084    1.086    0.084 {built-in method _pickle.load}
 
 
-Regardless of the actual codes that was run we can understand that most of the execution time of the slave was spent in {built-in method numpy.core._multiarray_umath.correlate}, which is a numpy function already optimized (probably written in C) and so I wouldn't improve the performance of my application if I wrote it in C, since the actual computation is already spent in an optimized (compiled) function.
+Regardless of the actual codes that was run we can understand that most of the execution time (118.273 out of 168.205 seconds) of the slave was spent in {built-in method numpy.core._multiarray_umath.correlate}, which is a numpy function already optimized (probably written in C) and so I wouldn't improve the performance of my application if I wrote it in C, since the actual computation time is spent in an already optimized (compiled) function.
 
-The second interesting point is that some time is actually wasted in {method 'recv' of 'mpi4py.MPI.Comm' objects}. This has to do with what discussed previously. The slaves waste time waiting for the master to give them new work to do. Please note that the method 'recv' of 'mpi4py.MPI.Comm' uses busy waiting instead of sleeping (at least in the implementation of openmpi I am using), so that time spent waiting for the master results in actual cpu usage instead of sleep time. Anyway, the problem is that I chose the master sleep time too large (that was 0.3 seconds). I then decreased the sleep time to 0.03 seconds, made sure again that the master was actually sleeping most of the time after the change, and then I profiled the slave code again. This time the time spent in {method 'recv' of 'mpi4py.MPI.Comm' objects} was less than 2 seconds.
+The second interesting point is that some time is actually wasted in {method 'recv' of 'mpi4py.MPI.Comm' objects} (19.546 out of 168.205 seconds). This has to do with what discussed previously: the slaves waste time waiting for the master to give them new work to do. Please note that the method 'recv' of 'mpi4py.MPI.Comm' uses busy waiting instead of sleeping (at least in the implementation of openmpi I am using), this means the time spent waiting for the master results in cpu usage instead of sleep time. Anyway, the problem is that I chose the master sleep time too large (that was 0.3 seconds). I then decreased the sleep time to 0.03 seconds, made sure again that the master was actually sleeping most of the time after the change, and then I profiled the slave code again. This time the time spent in {method 'recv' of 'mpi4py.MPI.Comm' objects} was less than 2 seconds.
 
 
 More examples covering common scenarios
