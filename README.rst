@@ -194,7 +194,7 @@ What are the risks of choosing a master sleep time too big? When a slave complet
 
 Bottom line, the ideal master sleep time should be much greater than the master awake time but also much smaller than the average slave execution time. Whatever your choice is, make sure to berify the performance of your application using a profiler, discussed later.
 
-To make my life easier, I design my applications so that the master doesn't do anything more than what shown in the example code. This has several advantages::
+To make my life easier, I design my applications so that the master doesn't do anything more than what shown in the example code. This has several advantages:
 
 * I am sure that the master is idle most of the time and I don't have to verify this at every change in the code (so I run the code with n+1 processes)
 * The sleep time is way smaller than the average slave execution time, so I am sure I am not wasting slaves resources
