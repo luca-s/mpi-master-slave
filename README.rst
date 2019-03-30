@@ -9,11 +9,11 @@ credits: Luca Scarabello, Landon T. Clipp
 Why MPI with Python?
 --------------------
 
-Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive. There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions.
+Python is such a nice and features rich language that writing the high level logic of your application with it require so little effort. Also, considering that you can wrap C or Fortran functions in Python, there is no need to write your whole application in a low level language that makes hard to change application logic, refactoring, maintenance, porting and adding new features.  Instead you can write the application in Python and possibly write in C/Fortran the functions that are computationally expensive (also it worth trying using Numba module before even considering using C/fortran, which allows to "compile" your code directly in Python and also allow GPU computing). There is no need to write the whole application in C/Fortran if 90% of the execution time is spent in a bunch of functions. Just focus on optimizing those functions. Of course this is not true if the application execution time is spread among way too many parts of code, in this case it is certainly sensible to think about using a compiled or fast language for the whole software project instead of python.
 
-Also I just want to highligth that MPI allows to scale an application, that means it can handle indefinite amount of work given that enough hardware (computing nodes) is available. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but doesn't allow you application to scale with the size of the input.
+Also I just want to highligth that MPI allows to scale an application, that means it allows your code to handle indefinite amount of work given that enough hardware (computing nodes) is available. This shouldn't be confused with code optimization (multi threading, GPU code) that increases execution speed but doesn't allow your application to scale with the size of the input. That is, even if more hardware becomes available it doesn't improve the performance of the code because the code is not written in a way that it can take adavantage of the additional resources.
 
-MPI can also be used on your local machine spawing a process for each core, so you don't need a cluster. The resulting performance are comparable with multithreded code but usually is quicker to modify your application to support multithreding while MPI enforce a strinct design of your application as each process cannot share memory with others.
+Interesting note, MPI can be used on your local machine (no need to have a cluster) spawing a process for each core. This in turn results in performance which are comparable with multithreded code, though it usually quicker to modify your application to support multithreding while MPI enforces a strinct design of your application. So, depending on the scope of your project, you might consider a different approche.
 
 
 Writing you application
@@ -83,7 +83,7 @@ Writing a master slave application is as simple as extending the "Slave" class, 
                         print('Master: slave finished is task and says "%s"' % message)
 
                 # sleep some time: this is a crucial detail discussed below!
-                time.sleep(0.3)
+                time.sleep(0.03)
 
 
     class MySlave(Slave):
@@ -182,17 +182,23 @@ Output:
 
 
 
-Usually you get the best performance when creating "n" processes, where "n" is the number of cores of your machine. Though. if your Master process doesn't do much computation and it is mostly idle, then make "n = cores + 1" to avoid having an idle core on your CPU.
+Usually you get the best performance when creating "n" processes, where "n" is the number of cores of your machine. Though, if your Master process doesn't do much computation and it is mostly idle (as in our example), then make "n = cores + 1" to avoid having an idle core on your CPU.
 
-To elaborate more on that, let's see what the master ("MyApp") in the previous example does. It periodically checks the work_queue ("work_queue.done()"), starts slaves ("work_queue.do_work()"), gathers the results ("work_queue.get_completed_work()") and finally sleeps for 0.3 second ("time.sleep(0.3)", which tells the Operating System that the master doesn't want to run for the next 0.3 second. Thus, for the next 0.3 sec, the OS has only the slaves to run, which can be assigned each of them to one of the cores. After the 0.3 sec are elapsed, the OS has again slaves+1 (the master) processes to run. The master will be assigned a time slot to run, in which it does its period duties (work_queue and stuff) and then it goes to sleep again.
+To elaborate more on that, let's see what the master ("MyApp") in the previous example does. It periodically checks the work_queue ("work_queue.done()"), starts slaves ("work_queue.do_work()"), gathers the results ("work_queue.get_completed_work()") and finally sleeps for 0.03 second ("time.sleep(0.03)", which tells the Operating System that the master doesn't want to run for the next 0.03 second. Thus, for the next 0.03 sec, the OS has only the slaves to run, which can be assigned each to one of the cores. After the 0.03 sec are elapsed, the OS has again slaves+1 (the master) processes to run. The master will be assigned a time slot to run, in which it does its period duties (work_queue and stuff) and then it goes to sleep again.
 
-Since the master processing takes only few milliseconds to be accomplished and then the master goes to sleep again for other 0.3 sec, the result is that the master is running for only few milliseconds every 0.3 seconds. That is the master is sleeping most of the time. Hence, for most of the time, there are only the slaves running, one for each of the core.That's the reason why in this scenario it is more convenient to run the process with "n = cores + 1".
+Since the master processing takes only a small amount of time to be accomplished and then the master goes to sleep again for other 0.03 sec, the result is that the master is running for a little every 0.03 seconds. That is the master is sleeping most of the time. Hence, for most of the time, there are only the slaves running, one for each of the core.That's the reason why in this scenario it is more convenient to run the process with "n = cores + 1".
 
-The master cpu usage is negligible if the time spent "awake" is much much smaller than the sleep time. The ration between the awake time and the sleep time is the actual master cpu usage. E.g. if the master spent 0.2 sec to perform its job and 0.3 sec for sleeping, the master usage would be 0.2/0.3 = 66% core usage! In this case it would still be possible to increse the sleep time to make the master awake time negligible again. 
+The master cpu usage is negligible  if the time spent "awake" is much much smaller than the sleep time. The ratio between the awake time and the sleep time is the actual master cpu usage. E.g. if the master spent 0.2 sec to perform its job and 0.3 sec for sleeping, the master usage would be 0.2/0.3 = 66% core usage! In this case it would still be possible to increse the sleep time to make the master awake time negligible again.
 
-What are the risks of choosing a master sleep time too big? If a slave finish its job it doesn't do anything until the master awakes and gives the slave a new task. So the ideal sleep time should be much greater than the master awake time but also much smaller than the average slave execution time.
+What are the risks of choosing a master sleep time too big? When a slave completes its job it doesn't do anything until the master awakes and gives the slave a new task. This time spents waiting for the master is a resource waste and we want to minimize it.
 
-Anyway, please remember that there is nothing wrong with a Master that is computationally expensive, simply avoid calling "time.sleep(...)" so that the master makes use of all the computing power and then call mpiexec with "n=number of cores" and one core will be used constantly by the Master.
+Bottom line, the ideal master sleep time should be much greater than the master awake time but also much smaller than the average slave execution time. Whatever your choice is, make sure to berify the performance of your application using a profiler, discussed later.
+
+To make my life easier, I design my applications so that the master doesn't do anything more than what shown in the example code. This has several advantages:
+- I am sure that the master is idle most of the time and I don't have to verify this at every change in the code (so I run the code with n+1 processes)
+- The sleep time is way smaller than the average slave execution time, so I am sure I am not wasting slaves resources
+- My application scales up to thousands of slaves because the master is never a bottleneck, since it is always ready to handle slaves, it doesn't have anything else to do.
+
 
 
 Debugging
@@ -283,6 +289,8 @@ Output:
 
 ::
 
+   3085 function calls in 30.049 seconds
+
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
@@ -305,7 +313,7 @@ Output:
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 
-         3085 function calls in 30.049 seconds
+   3085 function calls in 30.049 seconds
 
    Ordered by: cumulative time
 
@@ -329,7 +337,32 @@ Output:
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 
 
-From the output above we can see most of the Master time is spent in time.sleep and this is good as the Master doesn't have to be busy as its role is to control the slaves. If the Master process become the bottleneck of your application, the slaves nodes will be idle due to the Master not being able to efficiently control them.
+From the output above we can see most of the Master time is spent in time.sleep (30.030 out of 30.049 seconds) and this is good as the Master doesn't have to be busy as its role is to control the slaves. If the Master process become the bottleneck of your application, the slaves nodes will be idle due to the Master not being able to efficiently control them.
+
+It is also interesting to show the profiling output I got from running the slavee of my real world application and make few considerations on that:
+
+::
+
+   1481358 function calls (1437450 primitive calls) in 168.205 seconds
+
+   Ordered by: internal time
+   List reduced from 1900 to 15 due to restriction <15>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      420  118.273    0.282  118.273    0.282 {built-in method numpy.core._multiarray_umath.correlate}
+       50   19.546    0.391   19.547    0.391 {method 'recv' of 'mpi4py.MPI.Comm' objects}
+     1161    9.339    0.008   10.210    0.009 headers.py:797(_wrapper)
+      132    3.774    0.029  124.311    0.942 core.py:162(do_xcorr_onechannel)
+       54    3.600    0.067    3.600    0.067 {built-in method numpy.fromfile}
+     1272    2.245    0.002    2.245    0.002 {method 'astype' of 'numpy.ndarray' objects}
+      417    1.638    0.004    1.638    0.004 {built-in method io.open}
+       44    1.268    0.029  125.655    2.856 core.py:233(do_xcorr_onetemplate)
+       13    1.086    0.084    1.086    0.084 {built-in method _pickle.load}
+
+
+Regardless of the actual codes that was run we can understand that most of the execution time of the slave was spent in {built-in method numpy.core._multiarray_umath.correlate}, which is a numpy function already optimized (probably written in C) and so I wouldn't improve the performance of my application if I wrote it in C, since the actual computation is already spent in an optimized (compiled) function.
+
+The second interesting point is that some time is actually wasted in {method 'recv' of 'mpi4py.MPI.Comm' objects}. This has to do with what discussed previously. The slaves waste time waiting for the master to give them new work to do. Please note that the method 'recv' of 'mpi4py.MPI.Comm' uses busy waiting instead of sleeping (at least in the implementation of openmpi I am using), so that time spent waiting for the master results in actual cpu usage instead of sleep time. Anyway, the problem is that I chose the master sleep time too large (that was 0.3 seconds). I then decreased the sleep time to 0.03 seconds, made sure again that the master was actually sleeping most of the time after the change, and then I profiled the slave code again. This time the time spent in {method 'recv' of 'mpi4py.MPI.Comm' objects} was less than 2 seconds.
 
 
 More examples covering common scenarios
